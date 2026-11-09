@@ -1,0 +1,68 @@
+{% extends "base.html" %}{% set active='hydra' %}
+{% block content %}
+<div class="card" style="border-color:var(--bad); background:linear-gradient(145deg,#1a0000,#0a0000);">
+<h2 style="color:var(--bad)">🛡️ Hydra - كسر كلمات المرور</h2>
+<p style="color:var(--muted);font-size:13px;">اختبار كلمات المرور على الأجهزة التي تملكها.</p>
+
+<div class="row">
+  <div><label>الهدف (IP)</label><input id="hydraTarget" placeholder="192.168.1.1"></div>
+  <div><label>الخدمة</label>
+    <select id="hydraService">
+      <option value="ssh">SSH</option>
+      <option value="ftp">FTP</option>
+      <option value="telnet">Telnet</option>
+      <option value="smb">SMB</option>
+      <option value="rdp">RDP</option>
+      <option value="vnc">VNC</option>
+    </select>
+  </div>
+</div>
+<div class="row" style="margin-top:10px;">
+  <div><label>اسم المستخدم (اختياري)</label><input id="hydraUser" placeholder="admin"></div>
+  <div><label>كلمة المرور (اختياري)</label><input id="hydraPass" placeholder="123456"></div>
+</div>
+<div class="row" style="margin-top:10px;">
+  <div><label>قائمة كلمات المرور (Wordlist)</label><input id="hydraWordlist" placeholder="/sdcard/Download/passwords.txt"></div>
+</div>
+<button onclick="runHydra()" style="width:100%; background:var(--bad); color:white; padding:15px; font-weight:bold; margin-top:10px;">💀 بدء الهجوم</button>
+
+<div id="hydraStatus" class="status" style="margin-top:12px;">جاهز</div>
+<div id="hydraOutput" style="display:none; margin-top:12px; background:#000; border:1px solid var(--accent); padding:10px; max-height:400px; overflow-y:auto;">
+  <pre id="hydraOut" style="white-space:pre-wrap; font-size:11px; color:var(--ok);"></pre>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function runHydra() {
+    const target = document.getElementById("hydraTarget").value.trim();
+    const service = document.getElementById("hydraService").value;
+    const user = document.getElementById("hydraUser").value.trim();
+    const pass = document.getElementById("hydraPass").value.trim();
+    const wordlist = document.getElementById("hydraWordlist").value.trim();
+    
+    if(!target) { alert("أدخل الهدف"); return; }
+    if(!user && !pass && !wordlist) { alert("أدخل مستخدماً أو كلمة مرور أو قائمة"); return; }
+    
+    document.getElementById("hydraStatus").textContent = "⏳ جاري الهجوم...";
+    
+    let url = `/api/hydra/run?target=${encodeURIComponent(target)}&service=${service}`;
+    if(user) url += `&user=${encodeURIComponent(user)}`;
+    if(pass) url += `&password=${encodeURIComponent(pass)}`;
+    if(wordlist) url += `&wordlist=${encodeURIComponent(wordlist)}`;
+    
+    const res = await fetch(url, {method:"POST"});
+    const data = await res.json();
+    
+    if(!data.success) {
+        document.getElementById("hydraStatus").textContent = "❌ " + data.message;
+        return;
+    }
+    
+    document.getElementById("hydraStatus").textContent = "✅ اكتمل الهجوم.";
+    document.getElementById("hydraOutput").style.display = "block";
+    document.getElementById("hydraOut").textContent = data.output;
+}
+</script>
+{% endblock %}

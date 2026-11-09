@@ -1,0 +1,88 @@
+{% extends "base.html" %}{% set active='sniffer' %}
+{% block content %}
+<style>
+  .brain-card { background: #050505; border: 1px solid #00ff88; border-radius: 10px; padding: 15px; margin-top: 15px; }
+  .brain-step { padding: 8px; border-bottom: 1px dashed #222; font-size: 13px; }
+  .decision { color: #ffcc00; font-weight: bold; }
+  .exploit-item { background: #1a0000; border: 1px solid #ff4444; border-radius: 5px; padding: 8px; margin-top: 5px; font-size: 12px; }
+  .c2-btn { display:block; text-align:center; background:#cc0000; color:white; padding:12px; border-radius:8px; text-decoration:none; font-weight:bold; margin-top:15px; }
+</style>
+
+<div class="card" style="text-align:center; border-color:#00ff88;">
+  <h2 style="color:#00ff88;">🧠 العقل المدبر (AI Agent)</h2>
+  <p style="font-size:13px; color:#aaa;">وكيل مستقل يخطط، يفحص، ويبحث عن الثغرات تلقائياً.</p>
+  <input type="text" id="targetInput" placeholder="أدخل IP أو هدف..." style="width:100%; padding:12px; background:#000; color:#0f0; border:1px solid #333; border-radius:8px; margin-top:10px;">
+  <button onclick="runAgent()" style="width:100%; padding:12px; background:#00ff88; color:#000; border:none; border-radius:8px; margin-top:10px; font-weight:bold;">🚀 تشغيل الوكيل</button>
+  <div id="agentStatus" style="margin-top:10px; padding:10px; border-radius:5px; display:none;"></div>
+</div>
+
+<div class="card" id="reportCard" style="display:none;">
+  <h3>📋 تقرير الوكيل:</h3>
+  <div id="reportContent"></div>
+</div>
+
+<div class="card" id="exploitCard" style="display:none;">
+  <h3>🔍 ثغرات محتملة (SearchSploit):</h3>
+  <div id="exploitContent"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function runAgent() {
+    const target = document.getElementById("targetInput").value.trim();
+    const status = document.getElementById("agentStatus");
+    status.style.display = "block";
+    if(!target) { status.style.background = "#330000"; status.textContent = "❌ أدخل هدفاً"; return; }
+    status.style.background = "#003300"; status.textContent = "⏳ الوكيل يعمل...";
+    
+    try {
+        const res = await fetch("/api/ai_agent/run", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({target: target})
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            status.style.background = "#003300"; status.style.color = "#0f0"; status.textContent = "✅ اكتمل التحقيق!";
+            document.getElementById("reportCard").style.display = "block";
+            document.getElementById("reportContent").innerHTML = `
+                <div class="brain-card">
+                    <p><b>🎯 الهدف:</b> ${data.report.target}</p>
+                    <p><b>📊 الخطوات:</b> ${data.report.total_steps}</p>
+                    <p><b>🔍 الاكتشافات:</b> ${data.report.total_discoveries}</p>
+                    <p class="decision">🧠 قرار العقل: ${data.decision}</p>
+                    <a href="/c2?target=${encodeURIComponent(data.report.target)}" class="c2-btn">💀 فتح C2 على هذا الهدف</a>
+                </div>
+            `;
+            
+            // البحث عن ثغرات
+            if(data.report.discoveries && data.report.discoveries.length > 0) {
+                const ports = data.report.discoveries[0].ports || [];
+                const service = ports.includes("80") ? "http" : ports.includes("22") ? "ssh" : "android";
+                const expRes = await fetch("/api/search_exploits", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({service: service})
+                });
+                const expData = await expRes.json();
+                
+                if(expData.success && expData.exploits.length > 0) {
+                    document.getElementById("exploitCard").style.display = "block";
+                    let html = "";
+                    expData.exploits.forEach(e => {
+                        html += `<div class="exploit-item"><b>${e.title}</b><br>المسار: ${e.path}</div>`;
+                    });
+                    document.getElementById("exploitContent").innerHTML = html;
+                }
+            }
+        } else {
+            status.style.background = "#330000"; status.textContent = "❌ " + data.message;
+        }
+    } catch(e) {
+        status.style.background = "#330000"; status.textContent = "❌ خطأ في الاتصال";
+    }
+}
+</script>
+{% endblock %}

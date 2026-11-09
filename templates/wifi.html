@@ -1,0 +1,39 @@
+{% extends "base.html" %}{% set active='wifi' %}
+{% block content %}
+<div class="card" style="border-color:var(--accent); background:linear-gradient(145deg,#0a0a1a,#05050a);">
+<h2 style="color:var(--accent)">📡 مركز قيادة الواي فاي</h2>
+<button onclick="scanWifi()" style="width:100%; background:var(--accent); color:#000; padding:15px; font-weight:bold; margin-top:10px;">📡 مسح الشبكات</button>
+<div id="status" style="text-align:center; margin-top:10px; font-weight:bold;">جاهز</div>
+</div>
+
+<div id="networksList" class="card"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function scanWifi() {
+    document.getElementById("status").textContent = "⏳ جاري المسح...";
+    document.getElementById("networksList").innerHTML = "";
+    
+    const res = await fetch("/api/wifi/scan");
+    const data = await res.json();
+    
+    if(!data.success) {
+        document.getElementById("status").textContent = "❌ " + data.message;
+        return;
+    }
+    
+    document.getElementById("status").textContent = `✅ تم العثور على ${data.count} شبكة.`;
+    let html = "";
+    data.networks.forEach(net => {
+        const color = net.security.includes("مفتوحة") ? "var(--warn)" : "var(--ok)";
+        html += `<div class="list-item" style="border-right:3px solid ${color}">
+            <b>📶 ${net.ssid}</b> <span style="color:${color}">${net.security}</span><br>
+            <b>BSSID:</b> ${net.bssid}<br>
+            <b>قوة الإشارة:</b> ${net.signal} dBm
+        </div>`;
+    });
+    document.getElementById("networksList").innerHTML = html;
+}
+</script>
+{% endblock %}

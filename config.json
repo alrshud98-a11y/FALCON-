@@ -1,0 +1,20 @@
+{
+  "host": "127.0.0.1",
+  "port": 5000,
+  "session_timeout": 3600,
+  "log_level": "INFO",
+  "password_min_length": 6,
+  "max_history": 100,
+  "theme": "dark",
+  "admin_username": "admin",
+  "ip_api_timeout": 8,
+  "abuseipdb_key": "",
+  "virustotal_key": "",
+  "telegram_token": "",
+  "telegram_chat_id": "",
+  "email_smtp": "",
+  "email_port": 587,
+  "email_user": "",
+  "email_password": "",
+  "email_to": ""
+}

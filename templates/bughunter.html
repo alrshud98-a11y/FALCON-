@@ -1,0 +1,49 @@
+{% extends "base.html" %}{% set active='bughunter' %}
+{% block content %}
+<div class="card" style="border-color:#9d4edd; background:linear-gradient(145deg,#1a0033,#0a001a);">
+<h2 style="color:#d4a373">🕵️ صائد الثغرات (الفحص العميق)</h2>
+<p style="color:var(--muted);font-size:13px;">زحف + فحص XSS/LFI في الروابط والنماذج.</p>
+
+<div class="row">
+  <div><label>رابط الموقع</label><input id="bhUrl" placeholder="https://example.com" value="https://kodaschool.united.sd"></div>
+</div>
+<button onclick="scanBug()" style="width:100%; background:#9d4edd; color:white; padding:15px; font-weight:bold; margin-top:10px;">🔍 بدء الزحف العميق والفحص</button>
+<div id="status" class="status" style="margin-top:12px;">جاهز</div>
+<div id="results" style="margin-top:12px;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function scanBug() {
+    const url = document.getElementById("bhUrl").value.trim();
+    if(!url) { alert("أدخل الرابط"); return; }
+    
+    document.getElementById("status").textContent = "⏳ جاري الزحف والفحص... (قد يستغرق دقيقة أو أكثر)";
+    document.getElementById("results").innerHTML = "";
+    
+    const res = await fetch("/api/bughunter/crawl?url=" + encodeURIComponent(url));
+    const data = await res.json();
+    
+    if(!data.success) {
+        document.getElementById("status").textContent = "❌ " + data.message;
+        return;
+    }
+    
+    if(data.vulnerable) {
+        document.getElementById("status").innerHTML = `<span style="color:var(--bad);font-weight:bold;">🚨 تم اكتشاف ${data.count} ثغرة!</span>`;
+        let html = "";
+        data.details.forEach(d => {
+            html += `<div class="list-item" style="border-right:3px solid var(--bad)">
+                <b>💉 ${d.type}</b><br>
+                الرابط: ${d.url}<br>
+                المتغير: ${d.param}
+            </div>`;
+        });
+        document.getElementById("results").innerHTML = html;
+    } else {
+        document.getElementById("status").innerHTML = `<span style="color:var(--ok);font-weight:bold;">✅ تم فحص ${data.scanned_links} رابط و ${data.scanned_forms} نموذج. لم يتم اكتشاف ثغرات.</span>`;
+    }
+}
+</script>
+{% endblock %}

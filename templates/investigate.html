@@ -1,0 +1,144 @@
+{% extends "base.html" %}{% set active='sniffer' %}
+{% block content %}
+<style>
+  .godfather-header { text-align:center; padding:20px; background:linear-gradient(180deg,#1a0000,#0a0000); border:1px solid #ff0000; border-radius:15px; margin-bottom:20px; }
+  .godfather-header h1 { color:#ff0000; text-shadow:0 0 10px #ff0000; margin:0; font-size:26px; }
+  .target-item { background:#0a0a0a; border:1px solid #333; border-radius:8px; padding:12px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+  .target-info { text-align:right; }
+  .target-ip { color:#ffcc00; font-weight:bold; font-family:monospace; font-size:16px; }
+  .target-meta { color:#888; font-size:12px; margin-top:3px; }
+  .investigate-btn { background:#ff0000; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold; }
+  .delete-btn { background:#333; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer; font-size:12px; margin-right:5px; }
+  .tool-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:15px; }
+  .tool-btn { padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-size:13px; }
+  .analysis-card { background:#050505; border:1px solid #00ff88; border-radius:10px; padding:15px; margin-top:15px; }
+  .analysis-item { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed #222; font-size:14px; }
+  .analysis-item span:first-child { color:#888; }
+  .analysis-item span:last-child { color:#fff; font-weight:bold; font-family:monospace; }
+  .vuln-alert { color:#ff4444; font-weight:bold; background:#330000; padding:8px; border-radius:5px; margin-top:8px; }
+</style>
+
+<div class="godfather-header">
+  <h1>🕴️ عراب المافيا (The Godfather)</h1>
+  <p>مركز التحقيق الشامل (تحليل تلقائي لكل هدف)</p>
+</div>
+
+<div class="card">
+  <h3>📋 الأهداف المكتشفة:</h3>
+  <div id="targetsList">جارٍ التحميل...</div>
+  <div style="margin-top:15px;">
+    <a href="/trap" style="display:block; text-align:center; background:#ff0000; color:white; padding:12px; border-radius:8px; text-decoration:none; font-weight:bold;">🪤 صائد الروابط (Trap)</a>
+  </div>
+</div>
+
+<div class="card" id="toolsCard" style="display:none;">
+  <h3 style="color:var(--warn);">🎯 أدوات التحقيق للهدف: <span id="selectedTarget" style="color:#ffcc00;"></span></h3>
+  <div class="tool-grid">
+    <button class="tool-btn" onclick="openTool('iptracker')" style="background:#0088cc; color:white;">📍 تتبع IP</button>
+    <button class="tool-btn" onclick="openTool('ports')" style="background:#cc8800; color:white;">🔌 فحص المنافذ</button>
+    <button class="tool-btn" onclick="openTool('c2')" style="background:#cc0000; color:white;">💀 الفارس (C2)</button>
+    <button class="tool-btn" onclick="openTool('sqli')" style="background:#6c2bd9; color:white;">💉 فحص SQLi</button>
+    <button class="tool-btn" onclick="openTool('bughunter')" style="background:#e63946; color:white;">🕵️ صائد الثغرات</button>
+    <button class="tool-btn" onclick="openTool('sniffer')" style="background:#008080; color:white;">📡 مستشعر الشبكة</button>
+  </div>
+</div>
+
+<div id="analysisResult" style="display:none;">
+  <div class="analysis-card">
+    <h3>📊 نتائج التحليل التلقائي:</h3>
+    <div id="analysisContent"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentTarget = "";
+let intelData = {};
+
+async function loadTargets() {
+    const list = document.getElementById("targetsList");
+    try {
+        const res = await fetch("/api/intel/list");
+        intelData = await res.json();
+        const keys = Object.keys(intelData);
+        
+        if(keys.length === 0) {
+            list.innerHTML = "<div style='text-align:center;color:var(--muted);padding:20px;'>لا توجد أهداف. استخدم Trap أو Sniffer.</div>";
+            return;
+        }
+        
+        let html = "";
+        keys.forEach(target => {
+            const info = intelData[target];
+            let geoText = "غير معروف";
+            if (info.geo) {
+                if (typeof info.geo === 'string') geoText = info.geo;
+                else if (info.geo.city) geoText = `${info.geo.city}, ${info.geo.country || ''}`;
+                else if (info.geo.lat) geoText = `إحداثيات: ${info.geo.lat}, ${info.geo.lon}`;
+            }
+            const sourceText = info.source ? `📡 ${info.source}` : '';
+            html += `<div class="target-item">
+                <div class="target-info">
+                    <div class="target-ip">${target}</div>
+                    <div class="target-meta">🌍 ${geoText} ${sourceText}</div>
+                </div>
+                <div>
+                    <button class="delete-btn" onclick="deleteTarget('${target}')">🗑️</button>
+                    <button class="investigate-btn" onclick="selectTarget('${target}')">🎯 تحقيق</button>
+                </div>
+            </div>`;
+        });
+        list.innerHTML = html;
+    } catch(e) { list.innerHTML = "❌ خطأ في التحميل"; }
+}
+
+async function deleteTarget(target) {
+    if(!confirm("حذف الهدف " + target + "؟")) return;
+    await fetch("/api/intel/delete", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({target: target})
+    });
+    loadTargets();
+    document.getElementById("toolsCard").style.display = "none";
+    document.getElementById("analysisResult").style.display = "none";
+}
+
+function selectTarget(target) {
+    currentTarget = target;
+    document.getElementById("selectedTarget").textContent = target;
+    document.getElementById("toolsCard").style.display = "block";
+    document.getElementById("analysisResult").style.display = "block";
+    
+    const info = intelData[target] || {};
+    let html = "";
+    html += `<div class="analysis-item"><span>🎯 الهدف:</span><span>${target}</span></div>`;
+    
+    // معالجة الموقع (سواء كان نصاً أو كائناً)
+    let geoDisplay = 'غير معروف';
+    if (info.geo) {
+        if (typeof info.geo === 'string') geoDisplay = info.geo;
+        else if (info.geo.city) geoDisplay = `${info.geo.city}, ${info.geo.country || ''}`;
+        else if (info.geo.lat) geoDisplay = `إحداثيات: ${info.geo.lat}, ${info.geo.lon}`;
+    }
+    html += `<div class="analysis-item"><span>📍 الموقع:</span><span>${geoDisplay}</span></div>`;
+    
+    html += `<div class="analysis-item"><span>🌐 مزود الخدمة:</span><span>${info.isp || 'غير معروف'}</span></div>`;
+    html += `<div class="analysis-item"><span>🔌 المنافذ المفتوحة:</span><span>${info.ports && info.ports.length > 0 ? info.ports.join(', ') : 'لا يوجد'}</span></div>`;
+    
+    if(info.vulnerabilities && info.vulnerabilities.length > 0) {
+        html += `<div class="vuln-alert">🚨 ثغرات محتملة: ${info.vulnerabilities.join(', ')}</div>`;
+    }
+    
+    document.getElementById("analysisContent").innerHTML = html;
+}
+
+function openTool(tool) {
+    if(!currentTarget) { alert("اختر هدفاً"); return; }
+    window.location.href = "/" + tool + "?target=" + encodeURIComponent(currentTarget);
+}
+
+loadTargets();
+</script>
+{% endblock %}

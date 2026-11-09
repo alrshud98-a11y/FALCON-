@@ -1,0 +1,142 @@
+{% extends "base.html" %}{% set active='set' %}
+{% block content %}
+<style>
+  .form-group { margin-bottom: 15px; }
+  .form-group label { display: block; margin-bottom: 5px; color: var(--muted); font-size: 13px; }
+  .form-group input { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid var(--border); background: var(--bg3); color: var(--text); }
+  .btn-primary { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 5px; font-weight: bold; width: 100%; cursor: pointer; }
+  .status-box { margin-top: 10px; padding: 10px; border-radius: 5px; font-size: 13px; display: none; }
+  .status-success { background: #003300; border: 1px solid var(--ok); color: var(--ok); }
+  .status-error { background: #330000; border: 1px solid var(--bad); color: var(--bad); }
+</style>
+
+<div class="card">
+  <h2>⚙️ إعدادات النظام</h2>
+  <div class="form-group">
+    <label>المنفذ (Port)</label>
+    <input type="number" id="portInput" placeholder="5000">
+  </div>
+  <div class="form-group">
+    <label>العنوان (Host)</label>
+    <input type="text" id="hostInput" placeholder="127.0.0.1">
+  </div>
+  <button class="btn-primary" onclick="saveConfig()">💾 حفظ إعدادات النظام</button>
+  <div id="configStatus" class="status-box"></div>
+</div>
+
+<div class="card">
+  <h2>🔑 تغيير كلمة المرور</h2>
+  <div class="form-group">
+    <label>كلمة المرور الحالية</label>
+    <input type="password" id="oldPassInput" placeholder="أدخل كلمة المرور الحالية...">
+  </div>
+  <div class="form-group">
+    <label>كلمة المرور الجديدة</label>
+    <input type="password" id="newPassInput" placeholder="أدخل كلمة مرور قوية...">
+  </div>
+  <button class="btn-primary" onclick="changePassword()" style="background:var(--warn);">🔐 تغيير كلمة المرور</button>
+  <div id="passStatus" class="status-box"></div>
+</div>
+
+<div class="card">
+  <h2>📋 معلومات النظام</h2>
+  <div id="sysInfo" style="font-size:13px; color:var(--muted);">جارٍ التحميل...</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadConfig() {
+  try {
+    const res = await fetch("/api/config");
+    const data = await res.json();
+    if(data.port) document.getElementById("portInput").value = data.port;
+    if(data.host) document.getElementById("hostInput").value = data.host;
+  } catch(e) { console.log("فشل تحميل الإعدادات"); }
+}
+
+async function saveConfig() {
+  const port = document.getElementById("portInput").value;
+  const host = document.getElementById("hostInput").value;
+  const status = document.getElementById("configStatus");
+  status.style.display = "block";
+  status.className = "status-box";
+  status.textContent = "⏳ جاري الحفظ...";
+
+  try {
+    const res = await fetch("/api/config/save", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({port: port, host: host})
+    });
+    const data = await res.json();
+    if(data.success) {
+      status.className = "status-box status-success";
+      status.textContent = data.message;
+    } else {
+      status.className = "status-box status-error";
+      status.textContent = data.message;
+    }
+  } catch(e) {
+    status.className = "status-box status-error";
+    status.textContent = "❌ فشل الاتصال";
+  }
+}
+
+async function changePassword() {
+  const oldPass = document.getElementById("oldPassInput").value;
+  const newPass = document.getElementById("newPassInput").value;
+  const status = document.getElementById("passStatus");
+  status.style.display = "block";
+  
+  if(!oldPass) {
+    status.className = "status-box status-error";
+    status.textContent = "يجب إدخال كلمة المرور الحالية";
+    return;
+  }
+  if(newPass.length < 4) {
+    status.className = "status-box status-error";
+    status.textContent = "كلمة المرور الجديدة قصيرة جداً (4 أحرف على الأقل)";
+    return;
+  }
+
+  status.className = "status-box";
+  status.textContent = "⏳ جاري التحقق والتغيير...";
+
+  try {
+    const res = await fetch("/api/change_password", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({old_password: oldPass, password: newPass})
+    });
+    const data = await res.json();
+    if(data.success) {
+      status.className = "status-box status-success";
+      status.textContent = data.message;
+      setTimeout(() => { window.location.href = "/logout"; }, 2000);
+    } else {
+      status.className = "status-box status-error";
+      status.textContent = data.message;
+    }
+  } catch(e) {
+    status.className = "status-box status-error";
+    status.textContent = "❌ فشل الاتصال";
+  }
+}
+
+async function loadSysInfo() {
+  try {
+    const res = await fetch("/api/config");
+    const data = await res.json();
+    document.getElementById("sysInfo").innerHTML = `
+      <p><b>المنصة:</b> FALCON Professional</p>
+      <p><b>الإصدار:</b> 1.0.0</p>
+      <p><b>المنفذ الحالي:</b> ${data.port || 5000}</p>
+      <p><b>العنوان:</b> ${data.host || '127.0.0.1'}</p>
+    `;
+  } catch(e) { document.getElementById("sysInfo").textContent = "فشل تحميل المعلومات"; }
+}
+
+loadConfig(); loadSysInfo();
+</script>
+{% endblock %}

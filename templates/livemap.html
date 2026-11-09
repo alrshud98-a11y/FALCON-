@@ -1,0 +1,59 @@
+{% extends "base.html" %}{% set active='livemap' %}
+{% block content %}
+<style>
+  .wifi-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 15px; margin-bottom: 12px; text-align: right; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+  .wifi-card h3 { color: var(--accent); margin: 0 0 8px 0; font-size: 16px; display: flex; justify-content: space-between; }
+  .wifi-card p { margin: 5px 0; font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; border-bottom: 1px dotted #333; padding-bottom: 4px; }
+  .wifi-card .info { color: var(--text); font-weight: bold; }
+  .wifi-card .danger { color: var(--bad); }
+  .wifi-card .ok { color: var(--ok); }
+</style>
+
+<div class="card" style="text-align:center;">
+  <h2>📡 استطلاع الواي فاي (Recon)</h2>
+  <p style="color:var(--muted);font-size:13px;">استكشاف شامل للشبكات مع فحص سريع للثغرات.</p>
+  <button onclick="scanNetwork()" style="width: 100%;">🔄 بدء الفحص الشامل</button>
+  <div id="statusText" style="color:var(--ok); margin-top:10px; font-weight:bold;">جاهز للفحص...</div>
+</div>
+
+<div id="wifiList">
+  <div class="card" style="text-align:center; color:var(--muted)">لم يتم المسح بعد. اضغط الزر أعلاه.</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function scanNetwork() {
+    const status = document.getElementById("statusText");
+    const wifiList = document.getElementById("wifiList");
+    
+    status.textContent = "⏳ جاري فحص الشبكات...";
+    wifiList.innerHTML = "<div class='card' style='text-align:center; color:var(--muted)'>جارٍ التحميل...</div>";
+
+    try {
+        const res = await fetch("/api/livemap/scan");
+        const data = await res.json();
+        
+        if(data.success) {
+            status.textContent = `✅ تم العثور على ${data.count} شبكة.`;
+            let html = "";
+            data.devices.forEach((dev) => {
+                html += `<div class="wifi-card">
+                    <h3><span>${dev.ssid}</span> <span>${dev.security}</span></h3>
+                    <p><span>البصمة (BSSID):</span> <span class="info">${dev.bssid}</span></p>
+                    <p><span>قوة الإشارة:</span> <span class="info">${dev.signal} dBm</span></p>
+                    <p><span>عنوان IP:</span> <span class="info">${dev.ip}</span></p>
+                    <p><span>تقييم الثغرات:</span> <span class="${dev.vuln.includes('⚠️') ? 'danger' : 'ok'}">${dev.vuln}</span></p>
+                </div>`;
+            });
+            wifiList.innerHTML = html;
+        } else {
+            status.textContent = "❌ " + data.message;
+        }
+    } catch(e) {
+        status.textContent = "❌ خطأ في الاتصال بالخادم.";
+    }
+}
+scanNetwork();
+</script>
+{% endblock %}

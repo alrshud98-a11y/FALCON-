@@ -1,0 +1,1 @@
+http://127.0.0.1:5000/sqli (GET)  # /data/data/com.termux/files/usr/bin/sqlmap -u http://127.0.0.1:5000/sqli --batch --level 5 --risk 3 --output-dir /data/data/com.termux/files/home/FALCON/data/sqlmap_output --tamper space2comment --random-agent --flush-session

@@ -1,0 +1,12 @@
+# 🦅 FALCON Security Framework
+
+منصة أمن سيبراني شاملة تعمل على Termux (أندرويد) بواجهة ويب احترافية.
+
+## ⚡ طريقة التثبيت على أي هاتف جديد
+
+افتح تطبيق Termux ونفذ الأوامر التالية بالترتيب:
+
+### 1. تحديث الحزم وتثبيت المتطلبات
+```bash
+pkg update && pkg upgrade -y
+pkg install git python -y

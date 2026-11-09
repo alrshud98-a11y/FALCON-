@@ -1,0 +1,68 @@
+✅ FALCON Professional Web Framework
+ * Serving Flask app 'app'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [09/Nov/2026 22:10:16] "GET /ai_agent HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:10:16] "GET /static/css/falcon.css HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:10:16] "GET /static/js/falcon.js HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:10:39] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:10:40] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:10:41] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:10:41] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:10:41] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:10:42] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:10:42] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:10:42] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:10:43] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:10:43] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:10:43] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:10:43] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:10:44] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:10:44] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:10:44] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:10:47] "[33mGET /api/system/health HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:12:02] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [09/Nov/2026 22:12:22] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:12:25] "[32mPOST /login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [09/Nov/2026 22:12:25] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:12:25] "GET /static/css/falcon.css HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:13:03] "GET /ai_agent HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:13:55] "GET /ai_agent HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:13:55] "GET /static/css/falcon.css HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:14:08] "GET /ai_agent HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:14:08] "[33mGET /api/system/health HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:14:08] "GET /static/css/falcon.css HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:14:27] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:14:27] "GET /static/css/falcon.css HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:14:27] "GET /static/js/falcon.js HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:14:27] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:14:28] "[33mGET /api/system HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:14:33] "GET /ai_agent HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:15:53] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:15:53] "GET /static/css/falcon.css HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:15:53] "GET /static/js/falcon.js HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:15:54] "GET /static/css/falcon.css HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:15:57] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:15:57] "GET /static/css/falcon.css HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:15:57] "GET /static/js/falcon.js HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:15:57] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:15:57] "[33mGET /api/system HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:16:01] "GET /ai_agent HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:16:11] "GET /ai_agent HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:16:11] "GET /static/js/falcon.js HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:16:11] "GET /static/css/falcon.css HTTP/1.1" 200 -
+127.0.0.1 - - [09/Nov/2026 22:16:21] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:16:22] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:16:25] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:16:25] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:16:25] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:16:25] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:16:25] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:16:26] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:16:26] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:16:26] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:16:26] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:16:27] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -
+127.0.0.1 - - [09/Nov/2026 22:16:27] "[33mPOST /api/ai_agent/run HTTP/1.1[0m" 404 -

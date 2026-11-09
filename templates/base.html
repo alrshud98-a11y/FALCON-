@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}FALCON{% endblock %}</title>
+<link rel="stylesheet" href="/static/css/falcon.css">
+</head>
+<body>
+
+<!-- الشريط العلوي -->
+<div class="top-bar">
+  <button class="menu-btn" onclick="toggleMenu()">☰ القائمة</button>
+  <div class="top-brand">🦅 FALCON</div>
+</div>
+
+<!-- القائمة الجانبية -->
+<div id="sidebar" class="sidebar">
+  <div class="sidebar-header">
+    <span>🦅 FALCON</span>
+    <button class="close-btn" onclick="toggleMenu()">✖</button>
+  </div>
+  <a href="/" class="{% if active=='dash' %}active{% endif %}">🏠 القيادة</a>
+  <a href="/network" class="{% if active=='net' %}active{% endif %}">🌐 الشبكة</a>
+  <a href="/hydra" class="{% if active=='hydra' %}active{% endif %}">🛡️ Hydra</a>
+  <a href="/iptracker" class="{% if active=='ip' %}active{% endif %}">📍 IP</a>
+  <a href="/ports" class="{% if active=='ports' %}active{% endif %}">🔌 المنافذ</a>
+  <a href="/reports" class="{% if active=='rep' %}active{% endif %}">📊 التقارير</a>
+  <a href="/history" class="{% if active=='hist' %}active{% endif %}">📋 السجل</a>
+  <a href="/files" class="{% if active=='files' %}active{% endif %}">📁 الملفات</a>
+  <a href="/payload" class="{% if active=='payload' %}active{% endif %}">☣️ مختبر البايلود</a>
+<a href="/fake_download" class="{% if active=='payload' %}active{% endif %}">🎭 صفحات التحميل المموهة</a>
+
+<a href="/payload_obfuscator" class="{% if active=='payload' %}active{% endif %}">🎭 مولد البايلود المموه</a>
+
+  
+  <!-- الفارس C2 -->
+  <a href="/c2" class="{% if active=='c2' %}active{% endif %}" style="color:#ff4444; font-weight:bold; border-right: 3px solid #ff4444;">💀 الفارس (C2)</a>
+  
+  <a href="/sigint" class="{% if active=='sigint' %}active{% endif %}">📡 SIGINT (استطلاع)</a>
+  <a href="/sqli" class="{% if active=='sqli' %}active{% endif %}">💉 فحص SQLi</a>
+  <a href="/bughunter" class="{% if active=='bughunter' %}active{% endif %}">🕵️ صائد الثغرات (XSS/LFI)</a>
+  <a href="/livemap" class="{% if active=='livemap' %}active{% endif %}">🌐 خريطة الشبكة</a>
+  <a href="/sniffer" class="{% if active=='sniffer' %}active{% endif %}" style="color:var(--accent);">📡 مستشعر الشبكة</a>
+<a href="/ai_agent" class="{% if active=='sniffer' %}active{% endif %}">🧠 العقل المدبر</a>
+
+  <a href="/wifi" class="{% if active=='wifi' %}active{% endif %}" style="color:var(--accent);">📡 مركز الواي فاي</a>
+  <a href="/settings" class="{% if active=='set' %}active{% endif %}">⚙️ الإعدادات</a>
+  <a href="/logout" class="logout">🚪 خروج</a>
+</div>
+
+<div id="overlay" class="overlay" onclick="toggleMenu()"></div>
+
+<div class="container">
+{% block content %}{% endblock %}
+</div>
+
+<footer>FALCON PROFESSIONAL SECURITY FRAMEWORK</footer>
+<script src="/static/js/falcon.js"></script>
+<script>
+  function toggleMenu() {
+    document.getElementById("sidebar").classList.toggle("open");
+    document.getElementById("overlay").classList.toggle("show");
+  }
+</script>
+{% block scripts %}{% endblock %}
+
+<!-- زر العراب العائم -->
+
+
+<!-- نافذة الدردشة -->
+
+
+
+
+<script>
+// 🕶️ نظام المراقبة التلقائية للعراب
+async function monitorHealth() {
+    try {
+        const res = await fetch("/api/system/health");
+        const d = await res.json();
+        
+        if (d && d.health === false) {
+            // إذا كان هناك خطأ، نظهر إشعاراً
+            const msg = "🕶️ العراب: تنبيه! " + d.issues.join(" | ");
+            showToast(msg, 'danger');
+        }
+    } catch (e) {
+        // إذا فشل الاتصال، الخادم متوقف
+        showToast("🕶️ العراب: الخادم توقف عن الاستجابة!", 'danger');
+    }
+}
+
+// تشغيل المراقبة كل 30 ثانية
+setInterval(monitorHealth, 30000);
+</script>
+
+</body>
+</html>
+
+<!-- 🕶️ العراب: الشخصية المتحركة -->
+<div id="godfatherChar" onclick="toggleGodfather()" style="position:fixed; bottom:20px; left:20px; width:60px; height:60px; background:rgba(0,0,0,0.6); border:2px solid #00c8ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:32px; cursor:pointer; z-index:1000; backdrop-filter:blur(5px); box-shadow:0 0 15px rgba(0,200,255,0.5); transition:transform 0.1s; animation:float 3s infinite ease-in-out;">
+🕶️
+</div>
+
+<!-- نافذة العراب العائمة والشفافة -->
+<div id="godfatherChat" style="display:none; position:fixed; bottom:90px; left:20px; width:300px; max-width:85vw; height:400px; background:rgba(11,29,48,0.7); backdrop-filter:blur(10px); border:1px solid rgba(0,200,255,0.5); border-radius:15px; z-index:1000; flex-direction:column; box-shadow:0 4px 20px rgba(0,0,0,0.5); overflow:hidden;">
+  
+  <div style="padding:10px 15px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3);">
+    <b style="color:var(--accent); font-size:14px;">🕶️ العراب</b>
+    <span onclick="toggleGodfather()" style="cursor:pointer; color:var(--bad); font-size:18px;">✖</span>
+  </div>
+  
+  <div id="godfatherMessages" style="flex:1; padding:12px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; font-size:13px;">
+    <div style="background:rgba(0,0,0,0.4); padding:8px 12px; border-radius:10px; align-self:flex-start; max-width:90%;">مرحباً. أنا العراب. أنا هنا لتنفيذ أوامرك.</div>
+  </div>
+  
+  <div style="padding:10px; background:rgba(0,0,0,0.4); display:flex; gap:8px; border-top:1px solid rgba(255,255,255,0.1);">
+    <input id="godfatherInput" placeholder="أمرك يا معلم..." style="flex:1; padding:8px 10px; border-radius:8px; border:none; background:rgba(255,255,255,0.1); color:white; font-size:13px; outline:none;" onkeypress="if(event.key==='Enter') sendGodfather()">
+    <button onclick="startVoice()" style="background:var(--warn); color:#000; border:none; border-radius:8px; padding:0 10px; font-size:16px; cursor:pointer;">🎤</button>
+    <button onclick="sendGodfather()" style="background:var(--accent); color:#000; border:none; border-radius:8px; padding:0 12px; font-weight:bold; cursor:pointer;">إرسال</button>
+  </div>
+</div>
+
+<style>
+@keyframes float {
+    0% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(5deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+}
+#godfatherChar:active { transform: scale(0.9); }
+</style>
+
+<script>
+function toggleGodfather() {
+    const chat = document.getElementById("godfatherChat");
+    chat.style.display = chat.style.display === "flex" ? "none" : "flex";
+}
+
+async function sendGodfather() {
+    const input = document.getElementById("godfatherInput");
+    const text = input.value.trim();
+    if(!text) return;
+    
+    const msgs = document.getElementById("godfatherMessages");
+    msgs.innerHTML += `<div style="background:rgba(0,200,255,0.2); padding:8px 12px; border-radius:10px; align-self:flex-end; max-width:90%;">${text}</div>`;
+    input.value = "";
+    msgs.scrollTop = msgs.scrollHeight;
+    
+    try {
+        const res = await fetch("/api/ai/chat", {
+            method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text})
+        });
+        const d = await res.json();
+        
+        msgs.innerHTML += `<div style="background:rgba(0,0,0,0.4); padding:8px 12px; border-radius:10px; align-self:flex-start; max-width:90%;">${d.reply}</div>`;
+        msgs.scrollTop = msgs.scrollHeight;
+        
+        if(d.action === "navigate") {
+            setTimeout(() => { window.location.href = d.target; }, 1000);
+        } else if(d.action === "automate") {
+            // الانتقال للصفحة وتشغيل الكود بعد تحميلها
+            setTimeout(() => { 
+                window.location.href = d.target; 
+                sessionStorage.setItem('falcon_auto_js', d.js_to_run); 
+            }, 1000);
+        } else if(d.action === "run_js") {
+            setTimeout(() => { eval(d.target); }, 500);
+        }
+    } catch(e) {
+        msgs.innerHTML += `<div style="background:rgba(255,0,0,0.2); padding:8px 12px; border-radius:10px; align-self:flex-start; max-width:90%;">خطأ في الاتصال بالخادم.</div>`;
+    }
+}
+</script>

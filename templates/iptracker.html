@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FALCON - IP Tracker</title>
+    <style>
+        body { background-color: #0d1117; color: white; font-family: sans-serif; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: #161b22; padding: 20px; border-radius: 10px; border: 1px solid #30363d; }
+        input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #30363d; background: #0d1117; color: white; box-sizing: border-box;}
+        button { width: 100%; padding: 10px; background: #238636; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        button:hover { background: #2ea043; }
+        #result { margin-top: 20px; display: none; background: #0d1117; padding: 15px; border-radius: 5px; border: 1px solid #30363d; text-align: left; direction: ltr;}
+        .key { color: #58a6ff; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 style="text-align: center; color: #58a6ff;">📍 تتبع IP (OSINT)</h2>
+        <label>عنوان IP:</label>
+        <input type="text" id="ipInput" value="8.8.8.8" placeholder="أدخل عنوان IP">
+        <button onclick="trackIP()">🔍 تتبع</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function trackIP() {
+            const ip = document.getElementById('ipInput').value;
+            const resDiv = document.getElementById('result');
+            resDiv.style.display = 'block';
+            resDiv.innerHTML = 'جاري البحث... ⏳';
+            
+            try {
+                const response = await fetch(`/api/ip?ip=${ip}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resDiv.innerHTML = `
+                        <p><span class="key">IP:</span> ${data.ip}</p>
+                        <p><span class="key">Country:</span> ${data.country} (${data.country})</p>
+                        <p><span class="key">Region:</span> ${data.region}</p>
+                        <p><span class="key">City:</span> ${data.city}</p>
+                        <p><span class="key">ISP:</span> ${data.connection.org}</p>
+                        <p><span class="key">Org:</span> ${data.connection.org}</p>
+                        <p><span class="key">Timezone:</span> ${data.timezone.id}</p>
+                    `;
+                } else {
+                    resDiv.innerHTML = `<p style="color: red;">خطأ: ${data.message || 'لم يتم العثور على بيانات'}</p>`;
+                }
+            } catch (e) {
+                resDiv.innerHTML = `<p style="color: red;">فشل الاتصال بالسيرفر.</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

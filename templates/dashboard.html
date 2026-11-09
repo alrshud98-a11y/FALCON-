@@ -1,0 +1,49 @@
+{% extends "base.html" %}{% set active='dash' %}
+{% block content %}
+<div class="hero">
+<div class="eagle">🦅</div>
+<div class="logo">FALCON</div>
+<div class="tag">PROFESSIONAL</div>
+<div class="sub">منصة الأمن السيبراني</div>
+</div>
+<div class="card">
+<h2>📊 مركز القيادة</h2>
+<div id="dashTime" class="status">جارٍ...</div>
+<div class="grid-3">
+<div class="metric">🛡️ Hydra<span class="num" id="statHydra">—</span><span class="cap">عمليات</span></div>
+<div class="metric">🌐 فحوصات<span class="num" id="statScans">—</span><span class="cap">إجمالي</span></div>
+<div class="metric">📍 IP<span class="num" id="statIps">—</span><span class="cap">استعلامات</span></div>
+</div>
+<div style="margin-top:15px; text-align:center;">
+  <h3 id="rootStatus" style="color:var(--muted)">⏳ جارٍ فحص صلاحيات الروت...</h3>
+</div>
+</div>
+
+<div class="card" id="godfather-card" style="text-align:center; border-color:#ff0000; background:linear-gradient(145deg,#1a0000,#0a0000);">
+  <h2 style="color:#ff0000; text-shadow:0 0 10px #ff0000;">🕴️ عراب المافيا</h2>
+  <p style="color:var(--muted); font-size:13px;">مركز التحقيق الشامل والتحكم في الأدوات</p>
+  <a href="/investigate" style="display:inline-block; background:#ff0000; color:white; padding:12px 25px; border-radius:8px; text-decoration:none; font-weight:bold; margin-top:10px;">🚀 فتح مركز التحقيق</a>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+async function loadDashboard(){
+  const d = await api("/api/stats");
+  if(!d) return;
+  setText("statScans", d.scans ?? "—");
+  setText("statIps", d.ips ?? "—");
+  setText("statHydra", d.hydra ?? "—");
+  setText("dashTime", "آخر تحديث: "+new Date().toLocaleTimeString("ar"));
+  
+  // فحص الروت
+  const rootCheck = await api("/api/system");
+  if(rootCheck && rootCheck.root_access) {
+    setHTML("rootStatus", '<span style="color:var(--ok); font-weight:bold; font-size:16px;">👑 الجهاز مروت (Root Access Detected)!</span>');
+  } else {
+    setHTML("rootStatus", '<span style="color:var(--bad); font-weight:bold;">🔒 الجهاز غير مروت (Sandboxed). تعمل في الوضع الآمن.</span>');
+  }
+}
+loadDashboard();
+</script>
+{% endblock %}

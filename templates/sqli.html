@@ -1,0 +1,115 @@
+{% extends "base.html" %}{% set active='sqli' %}
+{% block content %}
+<div class="card" style="border-color:var(--warn); background:linear-gradient(145deg,#2a0000,#0a0000);">
+<h2 style="color:var(--warn)">💉 فحص واستغلال SQL (SQLMap Pro)</h2>
+<p style="color:var(--muted);font-size:13px;">أداة احترافية لاكتشاف واستغلال ثغرات SQL.</p>
+
+<div class="row">
+  <div><label>الرابط (مع متغير)</label><input id="sqliUrl" placeholder="http://example.com/page.php?id=1" value="http://testphp.vulnweb.com/artists.php?artist=1"></div>
+</div>
+
+<div class="row" style="margin-top:10px;">
+  <div>
+    <label>مستوى الفحص (Level)</label>
+    <select id="sqliLevel">
+      <option value="1">1 - سريع</option>
+      <option value="2" selected>2 - متوسط</option>
+      <option value="3">3 - عميق (قد يستغرق وقتاً)</option>
+      <option value="5">5 - شامل (احترافي)</option>
+    </select>
+  </div>
+  <div>
+    <label>الخطر (Risk)</label>
+    <select id="sqliRisk">
+      <option value="1">1 - آمن (لا يؤذي الموقع)</option>
+      <option value="2">2 - متوسط</option>
+      <option value="3">3 - عالي (قد يسبب مشاكل)</option>
+    </select>
+  </div>
+</div>
+
+<div class="row" style="margin-top:10px;">
+  <div>
+    <label>تجاوز الحماية (Tamper)</label>
+    <select id="sqliTamper">
+      <option value="">بدون تجاوز</option>
+      <option value="space2comment">space2comment (تجاوز WAF)</option>
+      <option value="between">between</option>
+      <option value="randomcase">randomcase</option>
+      <option value="charencode">charencode</option>
+    </select>
+  </div>
+</div>
+
+<div class="row" style="margin-top:10px;">
+  <label><input type="checkbox" id="sqliRandomAgent"> استخدام User-Agent عشوائي (لتجاوز الحظر)</label>
+  <label><input type="checkbox" id="sqliTor"> استخدام Tor (شبكة مجهولة)</label>
+</div>
+
+<button onclick="scanSqli('scan')" style="width:100%; background:var(--warn); color:#000; padding:15px; font-weight:bold; margin-top:15px;">🔍 بدء الفحص العميق</button>
+
+<div id="exploitButtons" style="display:none; margin-top:15px; border-top:1px solid #333; padding-top:15px;">
+  <h3 style="color:var(--bad); font-size:14px;">💀 خيارات الاستغلال:</h3>
+  <div class="row">
+    <button onclick="scanSqli('dbs')" style="background:#6c2bd9; color:white;">🗄️ سحب قواعد البيانات</button>
+    <button onclick="scanSqli('tables')" style="background:#c42e2e; color:white;">📊 سحب الجداول</button>
+    <button onclick="scanSqli('dump')" style="background:#e63946; color:white;">📥 سحب البيانات (Dump)</button>
+    <button onclick="scanSqli('passwords')" style="background:#ff5722; color:white;">🔑 سحب كلمات المرور</button>
+    <button onclick="scanSqli('shell')" style="background:#000; color:#ff4444; border:1px solid #ff4444;">💻 تنفيذ أوامر (Shell)</button>
+  </div>
+</div>
+
+<div id="status" class="status" style="margin-top:12px;">جاهز</div>
+<div id="outputBox" style="display:none; margin-top:12px; background:#000; border:1px solid var(--accent); padding:10px; max-height:500px; overflow-y:auto;">
+  <pre id="output" style="white-space:pre-wrap; font-size:11px; color:var(--ok);"></pre>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function scanSqli(action) {
+    const url = document.getElementById("sqliUrl").value.trim();
+    const level = document.getElementById("sqliLevel").value;
+    const risk = document.getElementById("sqliRisk").value;
+    const tamper = document.getElementById("sqliTamper").value;
+    const randomAgent = document.getElementById("sqliRandomAgent").checked;
+    const tor = document.getElementById("sqliTor").checked;
+    
+    if(!url) { alert("أدخل الرابط"); return; }
+    
+    document.getElementById("status").textContent = "⏳ جاري التنفيذ (قد يستغرق دقائق)...";
+    document.getElementById("outputBox").style.display = "none";
+    
+    const params = new URLSearchParams({
+        url, level, risk, action,
+        tamper: tamper || "",
+        random_agent: randomAgent ? "1" : "0",
+        tor: tor ? "1" : "0"
+    });
+    
+    const res = await fetch("/api/sqli/scan?" + params.toString());
+    const data = await res.json();
+    
+    if(!data.success) {
+        document.getElementById("status").textContent = "❌ " + data.message;
+        return;
+    }
+    
+    document.getElementById("outputBox").style.display = "block";
+    document.getElementById("output").textContent = data.raw_output;
+    document.getElementById("outputBox").scrollTop = document.getElementById("outputBox").scrollHeight;
+    
+    if(action === 'scan') {
+        if(data.vulnerable) {
+            document.getElementById("status").innerHTML = '<span style="color:var(--bad);font-weight:bold;">🚨 الموقع مصاب بثغرة!</span>';
+            document.getElementById("exploitButtons").style.display = "block";
+        } else {
+            document.getElementById("status").innerHTML = '<span style="color:var(--ok);font-weight:bold;">✅ الموقع يبدو آمناً.</span>';
+        }
+    } else {
+        document.getElementById("status").innerHTML = '<span style="color:var(--ok);font-weight:bold;">✅ تم تنفيذ ' + action + '.</span>';
+    }
+}
+</script>
+{% endblock %}

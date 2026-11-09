@@ -1,0 +1,79 @@
+#!/data/data/com.termux/files/usr/bin/bash
+cd "$HOME/FALCON" || { echo "FALCON غير مثبت"; exit 1; }
+
+case "$1" in
+  start|"")
+    pkill -f "python3.*app.py" 2>/dev/null
+    sleep 1
+    nohup python3 app.py > logs/server.log 2>&1 &
+    sleep 3
+    if pgrep -f "python3.*app.py" >/dev/null; then
+      PORT=$(python3 -c "import config; print(config.get('port',5000))")
+      echo "✅ FALCON يعمل: http://127.0.0.1:$PORT"
+    else
+      echo "❌ فشل. راجع: tail -20 logs/server.log"
+      tail -20 logs/server.log
+    fi
+    ;;
+  stop)
+    pkill -f "python3.*app.py" 2>/dev/null && echo "✅ تم الإيقاف" || echo "لم يكن يعمل"
+    ;;
+  restart)
+    "$0" stop; sleep 1; "$0" start
+    ;;
+  status)
+    if pgrep -f "python3.*app.py" >/dev/null; then
+      PORT=$(python3 -c "import config; print(config.get('port',5000))")
+      echo "✅ يعمل — http://127.0.0.1:$PORT"
+    else
+      echo "❌ متوقف"
+    fi
+    ;;
+  log)
+    tail -40 logs/server.log 2>/dev/null || echo "لا يوجد سجل"
+    ;;
+  open)
+    PORT=$(python3 -c "import config; print(config.get('port',5000))")
+    termux-open-url "http://127.0.0.1:$PORT" 2>/dev/null || \
+      echo "افتح المتصفح: http://127.0.0.1:$PORT"
+    ;;
+  password)
+    python3 setup_password.py
+    ;;
+  engines)
+    python3 -c "
+from engines.hydra_engine import HydraEngine
+from engines.network_engine import NetworkEngine
+from engines.port_engine import PortEngine
+from engines.dns_engine import DnsEngine
+from engines.ip_tracker import IPTracker
+from engines.faris_engine import FarisEngine
+from engines.history_engine import HistoryEngine
+from engines.report_engine import ReportEngine
+from engines.stats_engine import StatsEngine
+for E in [HydraEngine, NetworkEngine, PortEngine, DnsEngine, IPTracker, FarisEngine, HistoryEngine, ReportEngine, StatsEngine]:
+    e = E(); s = e.status()
+    print(f\"  {s.get('name','?'):12s} {'✅' if s.get('ready') else '❌'}\")
+"
+    ;;
+  plugins)
+    python3 -c "
+from plugins.loader import PluginLoader
+p = PluginLoader(); p.load_all()
+for name, info in p.list_info().items():
+    print(f\"  🔌 {info.get('name','?')} v{info.get('version','?')} — {info.get('description','')}\")
+"
+    ;;
+  *)
+    echo "FALCON — الأوامر:"
+    echo "  falcon           تشغيل"
+    echo "  falcon stop      إيقاف"
+    echo "  falcon restart   إعادة تشغيل"
+    echo "  falcon status    الحالة"
+    echo "  falcon log       آخر السجلات"
+    echo "  falcon open      فتح المتصفح"
+    echo "  falcon password  تغيير كلمة المرور"
+    echo "  falcon engines   حالة المحركات"
+    echo "  falcon plugins   الإضافات"
+    ;;
+esac

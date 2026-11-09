@@ -1,0 +1,46 @@
+{% extends "base.html" %}{% set active='ports' %}
+{% block content %}
+<div class="card" style="border-color:var(--warn);">
+<h2>🔌 فحص المنافذ (Nmap Pro)</h2>
+<div class="row">
+  <div><label>الهدف (IP)</label><input id="portHost" placeholder="192.168.1.1"></div>
+  <div><label>نوع الفحص</label>
+    <select id="scanType">
+      <option value="fast">سريع (Top 100)</option>
+      <option value="aggressive">شرس (All Ports + OS)</option>
+      <option value="vuln">فحص الثغرات (NSE Scripts)</option>
+    </select>
+  </div>
+</div>
+<button onclick="scanPorts()" style="width:100%; background:var(--warn); color:#000; padding:15px; font-weight:bold; margin-top:10px;">🔍 بدء الفحص</button>
+<div id="portResult" style="margin-top:12px; display:none; background:#000; border:1px solid var(--accent); padding:10px; max-height:500px; overflow-y:auto;">
+  <div id="portSummary" style="color:var(--ok); margin-bottom:10px; font-weight:bold;"></div>
+  <pre id="portOutput" style="white-space:pre-wrap; font-size:11px; color:#ccc;"></pre>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function scanPorts() {
+    const host = document.getElementById("portHost").value.trim();
+    const type = document.getElementById("scanType").value;
+    if(!host) { alert("أدخل الهدف"); return; }
+    
+    document.getElementById("portResult").style.display = "block";
+    document.getElementById("portSummary").textContent = "⏳ جاري الفحص...";
+    document.getElementById("portOutput").textContent = "";
+    
+    const res = await fetch(`/api/ports?host=${encodeURIComponent(host)}&type=${type}`);
+    const data = await res.json();
+    
+    if(!data.success) {
+        document.getElementById("portSummary").textContent = "❌ " + data.message;
+        return;
+    }
+    
+    document.getElementById("portSummary").textContent = `✅ تم اكتشاف ${data.count} منفذ مفتوح.`;
+    document.getElementById("portOutput").textContent = data.raw_output;
+}
+</script>
+{% endblock %}

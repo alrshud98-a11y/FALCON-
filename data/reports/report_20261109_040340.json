@@ -1,0 +1,54 @@
+{
+  "generated": "2026-11-09T04:03:40.530078",
+  "scans": [
+    {
+      "id": 6,
+      "timestamp": "2026-11-07T22:26:28.565775",
+      "type": "wifi",
+      "target": "local",
+      "result": "1",
+      "user": "system"
+    },
+    {
+      "id": 5,
+      "timestamp": "2026-11-07T22:14:24.640996",
+      "type": "wifi",
+      "target": "local",
+      "result": "1",
+      "user": "system"
+    },
+    {
+      "id": 4,
+      "timestamp": "2026-11-07T22:14:16.910394",
+      "type": "wifi",
+      "target": "local",
+      "result": "1",
+      "user": "system"
+    },
+    {
+      "id": 3,
+      "timestamp": "2026-11-07T21:48:53.009853",
+      "type": "ports",
+      "target": "123.538.8",
+      "result": "0",
+      "user": "system"
+    },
+    {
+      "id": 2,
+      "timestamp": "2026-11-07T21:48:09.700278",
+      "type": "arp",
+      "target": "local",
+      "result": "0",
+      "user": "system"
+    },
+    {
+      "id": 1,
+      "timestamp": "2026-11-07T21:48:04.267576",
+      "type": "wifi",
+      "target": "local",
+      "result": "1",
+      "user": "system"
+    }
+  ],
+  "ip_lookups": []
+}

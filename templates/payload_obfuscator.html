@@ -1,0 +1,91 @@
+{% extends "base.html" %}{% set active='payload' %}
+{% block content %}
+<style>
+  .header { text-align:center; padding:20px; background:linear-gradient(180deg,#1a0a00,#0a0500); border:1px solid #ff8800; border-radius:15px; margin-bottom:20px; }
+  .header h1 { color:#ff8800; text-shadow:0 0 10px #ff8800; margin:0; font-size:26px; }
+  textarea { width:100%; min-height:150px; background:#000; color:#0f0; padding:10px; border:1px solid #333; border-radius:8px; font-family:monospace; font-size:12px; margin-top:10px; }
+  button { width:100%; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; margin-top:10px; font-size:15px; }
+  .btn-encode { background:#ff8800; color:#000; }
+  .btn-copy { background:#0088cc; color:white; }
+  .status { margin-top:10px; padding:10px; border-radius:5px; font-size:13px; display:none; }
+  .status-success { background:#003300; border:1px solid #0f0; color:#0f0; }
+  .status-error { background:#330000; border:1px solid #f00; color:#f00; }
+  label { color:#aaa; font-size:13px; display:block; margin-top:15px; }
+</style>
+
+<div class="header">
+  <h1>🎭 مولد البايلود المموه (Obfuscator)</h1>
+  <p>تشفير البايلود بـ Base64 لتجنب اكتشافه من برامج مكافحة الفيروسات.</p>
+</div>
+
+<div class="card">
+  <label>1️⃣ الكود الأصلي (بايلود C2 أو أي كود بايثون):</label>
+  <textarea id="originalCode" placeholder="الصق الكود هنا..."></textarea>
+  <button class="btn-encode" onclick="encodePayload()">🔐 تشفير البايلود</button>
+  <div id="encodeStatus" class="status"></div>
+</div>
+
+<div class="card">
+  <label>2️⃣ البايلود المموه (جاهز للتشغيل):</label>
+  <textarea id="obfuscatedCode" readonly placeholder="سيظهر هنا..."></textarea>
+  <button class="btn-copy" onclick="copyPayload()">📋 نسخ البايلود</button>
+  <div id="copyStatus" class="status"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function encodePayload() {
+    const code = document.getElementById("originalCode").value;
+    const status = document.getElementById("encodeStatus");
+    status.style.display = "block";
+    
+    if(!code) {
+        status.className = "status status-error";
+        status.textContent = "❌ الرجاء إدخال الكود أولاً";
+        return;
+    }
+    
+    status.className = "status";
+    status.textContent = "⏳ جاري التشفير...";
+    
+    try {
+        const res = await fetch("/api/payload/encode", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({code: code})
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            document.getElementById("obfuscatedCode").value = data.obfuscated;
+            status.className = "status status-success";
+            status.textContent = "✅ تم تشفير البايلود بنجاح! انسخه وشغله على الهدف.";
+        } else {
+            status.className = "status status-error";
+            status.textContent = "❌ " + data.message;
+        }
+    } catch(e) {
+        status.className = "status status-error";
+        status.textContent = "❌ خطأ في الاتصال";
+    }
+}
+
+function copyPayload() {
+    const textarea = document.getElementById("obfuscatedCode");
+    const status = document.getElementById("copyStatus");
+    status.style.display = "block";
+    
+    if(!textarea.value) {
+        status.className = "status status-error";
+        status.textContent = "❌ لا يوجد بايلود مشفر لنسخه";
+        return;
+    }
+    
+    textarea.select();
+    document.execCommand('copy');
+    status.className = "status status-success";
+    status.textContent = "✅ تم نسخ البايلود إلى الحافظة!";
+}
+</script>
+{% endblock %}

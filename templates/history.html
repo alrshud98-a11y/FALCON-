@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% set active='hist' %}
+{% block content %}
+<div class="card">
+<h2>📋 السجل</h2>
+<button onclick="loadHistory()">🔄 تحديث</button>
+<div id="historyResult" style="margin-top:12px"></div>
+</div>
+{% endblock %}
+{% block scripts %}<script>loadHistory();</script>{% endblock %}

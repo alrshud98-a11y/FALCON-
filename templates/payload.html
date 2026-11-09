@@ -1,0 +1,61 @@
+{% extends "base.html" %}{% set active='payload' %}
+{% block content %}
+<div class="card" style="border-color:#ff4444; background:linear-gradient(145deg,#2a0000,#0a0000);">
+<h2 style="color:#ff4444">☣️ مختبر البايلود (XSS Lab)</h2>
+<p style="color:var(--muted);font-size:13px;">توليد أكواد XSS واختبارها على صفحة هدف حقيقية.</p>
+
+<div class="row">
+  <div>
+    <label>نوع البايلود</label>
+    <select id="pType">
+      <option value="alert">نافذة منبثقة (Alert)</option>
+      <option value="cookie">سرقة الكوكيز (Cookie Steal)</option>
+      <option value="deface">تخريب الصفحة (Defacement)</option>
+    </select>
+  </div>
+</div>
+<button onclick="genPayload()" style="width:100%; background:#ff4444; color:white; padding:15px; font-weight:bold; margin-top:10px;">🛠️ توليد الكود</button>
+<div id="payloadBox" style="display:none; margin-top:10px;">
+  <textarea id="payloadCode" rows="6" style="width:100%; background:#000; color:#45e39a; font-family:monospace; font-size:12px;" readonly></textarea>
+</div>
+</div>
+
+<div class="card">
+<h2>🎯 صفحة هدف حقيقية (Vulnerable)</h2>
+<p style="color:var(--muted);font-size:13px;">هذه الصفحة تقبل الكود وتنفذه فعلياً. ضع البايلود في الرابط (URL) لترى النتيجة.</p>
+<div style="background:white; padding:20px; border-radius:8px; margin-top:10px;">
+  <h3 style="color:#333; text-align:center;">Vulnerable Search</h3>
+  <div style="display:flex; gap:10px; margin-top:10px;">
+    <input type="text" id="vulnInput" placeholder="ابحث هنا..." style="flex:1; padding:10px; border:1px solid #ccc; border-radius:5px; color:#000;">
+    <button onclick="goVuln()" style="padding:10px 20px; background:#e63946; color:white; border:none; border-radius:5px;">بحث (خطير)</button>
+  </div>
+  <div id="vulnResult" style="margin-top:15px; color:#333;"></div>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function genPayload() {
+    const type = document.getElementById("pType").value;
+    try {
+        const res = await fetch("/api/payload/generate?type=" + type);
+        const data = await res.json();
+        if(data.code) {
+            document.getElementById("payloadBox").style.display = "block";
+            document.getElementById("payloadCode").value = data.code;
+        } else {
+            alert("فشل التوليد: " + (data.message || "خطأ"));
+        }
+    } catch(e) {
+        alert("خطأ في الاتصال: " + e.message);
+    }
+}
+
+function goVuln() {
+    const input = document.getElementById("vulnInput").value;
+    // إرسال الكود إلى صفحة الهدف الحقيقية
+    window.location.href = "/vuln_search?q=" + encodeURIComponent(input);
+}
+</script>
+{% endblock %}

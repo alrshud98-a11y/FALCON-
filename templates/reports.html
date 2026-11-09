@@ -1,0 +1,45 @@
+{% extends "base.html" %}{% set active='rep' %}
+{% block content %}
+<div class="card">
+<h2>📊 التقارير</h2>
+<p style="color:var(--muted);">توليد تقارير بكل العمليات والفحوصات.</p>
+
+<div class="row" style="margin-top:10px;">
+  <button onclick="generateReport('json')" style="background:#00c8ff; color:#000; padding:15px; flex:1;">📄 تقرير JSON</button>
+  <button onclick="generateReport('csv')" style="background:#45e39a; color:#000; padding:15px; flex:1;">📊 تقرير CSV</button>
+</div>
+<div id="reportResult" style="margin-top:15px;"></div>
+</div>
+
+<div class="card">
+<h2>📁 التقارير السابقة</h2>
+<button onclick="listReports()" style="margin-bottom:10px;">🔄 تحديث</button>
+<div id="reportsList">لم يتم التحميل بعد.</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function generateReport(type) {
+    document.getElementById("reportResult").textContent = "⏳ جاري التوليد...";
+    const res = await fetch("/api/report?type=" + type);
+    const data = await res.json();
+    if(data.success) {
+        document.getElementById("reportResult").innerHTML = `<span style="color:var(--ok)">✅ تم إنشاء التقرير:</span><br><code style="color:#aaa;">${data.path}</code>`;
+    } else {
+        document.getElementById("reportResult").textContent = "❌ " + data.message;
+    }
+}
+
+async function listReports() {
+    const res = await fetch("/api/reports/list");
+    const data = await res.json();
+    if(data.success) {
+        let html = "";
+        data.files.forEach(f => { html += `<div class="list-item">📄 ${f}</div>`; });
+        document.getElementById("reportsList").innerHTML = html || "لا توجد تقارير.";
+    }
+}
+listReports();
+</script>
+{% endblock %}
